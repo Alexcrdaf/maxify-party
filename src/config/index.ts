@@ -7,35 +7,32 @@ export interface AppConfig {
   maxParticipants: number;
   peerJsHost?: string;
   peerJsPort?: number;
-  peerJsPath: string;
-  peerJsSecure: boolean;
+  peerJsPath?: string;
+  peerJsSecure?: boolean;
   iceServers: RTCIceServer[];
   roomCodeLength: number;
-  syncThresholdSeconds: number; // Max allowed desync time before seeking
+  syncThresholdSeconds: number;
   heartbeatIntervalMs: number;
 }
 
 export const APP_CONFIG: AppConfig = {
   maxParticipants: Number(import.meta.env.VITE_MAX_PARTICIPANTS) || 10,
-  peerJsHost: import.meta.env.VITE_PEERJS_HOST || undefined, // defaults to 0.peerjs.com
+  peerJsHost: import.meta.env.VITE_PEERJS_HOST || undefined,
   peerJsPort: import.meta.env.VITE_PEERJS_PORT ? Number(import.meta.env.VITE_PEERJS_PORT) : undefined,
-  peerJsPath: import.meta.env.VITE_PEERJS_PATH || '/',
-  peerJsSecure: import.meta.env.VITE_PEERJS_SECURE !== 'false',
+  peerJsPath: import.meta.env.VITE_PEERJS_PATH || undefined,
+  peerJsSecure: import.meta.env.VITE_PEERJS_SECURE ? import.meta.env.VITE_PEERJS_SECURE !== 'false' : undefined,
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun.cloudflare.com:3478' },
+    { urls: 'stun:openrelay.metered.ca:80' },
   ],
   roomCodeLength: 6,
   syncThresholdSeconds: 1.5,
   heartbeatIntervalMs: 5000,
 };
 
-/**
- * Generates human-friendly 6-character room codes (e.g. K7MX42)
- * Avoids ambiguous characters like 0/O, 1/I
- */
 export function generateRoomCode(): string {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   let result = '';
@@ -45,9 +42,6 @@ export function generateRoomCode(): string {
   return result;
 }
 
-/**
- * Validates room code format
- */
 export function isValidRoomCode(code: string): boolean {
   if (!code) return false;
   const cleaned = code.trim().toUpperCase();

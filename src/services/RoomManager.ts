@@ -70,9 +70,11 @@ export class RoomManager {
         resolve(id);
       });
 
-      this.peer.on('error', (err) => {
+      this.peer.on('error', (err: any) => {
         if (err.type === 'unavailable-id') {
           this.callbacks.onError('Комната с таким кодом уже активна. Попробуйте другой код.');
+        } else if (err.type === 'server-error') {
+          this.callbacks.onError('Облачный сигнальный сервер PeerJS временно перегружен или недоступен. Попробуйте нажать еще раз через несколько секунд.');
         } else {
           this.callbacks.onError(`Ошибка сети WebRTC: ${err.message || err.type}`);
         }
@@ -157,9 +159,11 @@ export class RoomManager {
         });
       });
 
-      this.peer.on('error', (err) => {
+      this.peer.on('error', (err: any) => {
         if (err.type === 'peer-unavailable') {
           this.callbacks.onError(`Комната «${this.roomId}» не найдена или ведущий вышел.`);
+        } else if (err.type === 'server-error') {
+          this.callbacks.onError('Облачный сигнальный сервер PeerJS временно перегружен. Повторите попытку через пару секунд.');
         } else {
           this.callbacks.onError(`Ошибка сети: ${err.message || err.type}`);
         }
