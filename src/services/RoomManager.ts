@@ -32,6 +32,7 @@ export class RoomManager {
   private callbacks: RoomCallbacks;
   private heartbeatTimer: any = null;
   private activeLocalStream: MediaStream | null = null;
+  private localVoiceStream: MediaStream | null = null;
   private isScreenSharing: boolean = false;
 
   constructor(myProfile: Participant, callbacks: RoomCallbacks) {
@@ -83,7 +84,13 @@ export class RoomManager {
       });
 
       this.peer.on('call', (call) => {
-        call.answer();
+        const isScreen = call.metadata?.isScreenShare === true;
+        // Answer call with our own local mic if voice call, so it becomes bidirectional
+        if (!isScreen && this.localVoiceStream) {
+          call.answer(this.localVoiceStream);
+        } else {
+          call.answer();
+        }
         this.handleIncomingMediaCall(call);
       });
     });
@@ -160,7 +167,12 @@ export class RoomManager {
       });
 
       this.peer.on('call', (call) => {
-        call.answer();
+        const isScreen = call.metadata?.isScreenShare === true;
+        if (!isScreen && this.localVoiceStream) {
+          call.answer(this.localVoiceStream);
+        } else {
+          call.answer();
+        }
         this.handleIncomingMediaCall(call);
       });
     });
@@ -354,12 +366,24 @@ export class RoomManager {
   }
 
   public sendVoiceStream(stream: MediaStream) {
+    this.localVoiceStream = stream;
+
     this.connections.forEach((_conn, peerId) => {
       if (this.peer) {
         const existingVoice = this.mediaCalls.get(`${peerId}-voice`);
         if (existingVoice) {
+          // If a call is already established, replace audio track to avoid renegotiation drop
+          const audioTrack = stream.getAudioTracks()[0];
+          const sender = (existingVoice as any).peerConnection
+            ?.getSenders()
+            ?.find((s: any) => s.track && s.track.kind === 'audio');
+          if (sender && audioTrack) {
+            sender.replaceTrack(audioTrack);
+            return;
+          }
           existingVoice.close();
         }
+
         const call = this.peer.call(peerId, stream, {
           metadata: { isScreenShare: false },
         });
