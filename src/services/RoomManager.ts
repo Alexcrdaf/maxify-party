@@ -201,15 +201,16 @@ export class RoomManager {
   }
 
   private handleIncomingMediaCall(call: MediaConnection) {
-    this.mediaCalls.set(call.peer, call);
+    const isScreen = call.metadata?.isScreenShare === true;
+    const callKey = `${call.peer}-${isScreen ? 'screen' : 'voice'}`;
+    this.mediaCalls.set(callKey, call);
 
     call.on('stream', (remoteStream) => {
-      const isScreen = call.metadata?.isScreenShare === true;
       this.callbacks.onIncomingStream(remoteStream, call.peer, isScreen);
     });
 
     call.on('close', () => {
-      this.mediaCalls.delete(call.peer);
+      this.mediaCalls.delete(callKey);
     });
   }
 
@@ -354,11 +355,20 @@ export class RoomManager {
 
   public sendVoiceStream(stream: MediaStream) {
     this.connections.forEach((_conn, peerId) => {
-      if (this.peer && !this.mediaCalls.has(peerId)) {
+      if (this.peer) {
+        const existingVoice = this.mediaCalls.get(`${peerId}-voice`);
+        if (existingVoice) {
+          existingVoice.close();
+        }
         const call = this.peer.call(peerId, stream, {
           metadata: { isScreenShare: false },
         });
-        this.handleIncomingMediaCall(call);
+        if (call) {
+          this.mediaCalls.set(`${peerId}-voice`, call);
+          call.on('stream', (remoteStream) => {
+            this.callbacks.onIncomingStream(remoteStream, call.peer, false);
+          });
+        }
       }
     });
   }
@@ -369,10 +379,19 @@ export class RoomManager {
 
     this.connections.forEach((_conn, peerId) => {
       if (this.peer) {
+        const existingScreen = this.mediaCalls.get(`${peerId}-screen`);
+        if (existingScreen) {
+          existingScreen.close();
+        }
         const call = this.peer.call(peerId, stream, {
           metadata: { isScreenShare: true },
         });
-        this.handleIncomingMediaCall(call);
+        if (call) {
+          this.mediaCalls.set(`${peerId}-screen`, call);
+          call.on('stream', (remoteStream) => {
+            this.callbacks.onIncomingStream(remoteStream, call.peer, true);
+          });
+        }
       }
     });
   }
