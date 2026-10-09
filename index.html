@@ -1,12 +1,56 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>syncwave</title>
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>SyncWave — Совместный просмотр видео и фильмов онлайн (Watch Party P2P)</title>
+    <meta name="title" content="SyncWave — Совместный просмотр видео и фильмов онлайн (Watch Party P2P)" />
+    <meta name="description" content="Смотрите любимые фильмы, сериалы и видео синхронно вместе с друзьями прямо в браузере. WebRTC P2P синхронизация, трансляция вкладки со звуком и голосовой чат без задержек." />
+    <meta name="keywords" content="совместный просмотр, watch party, синхронный просмотр фильмов, смотреть вместе с друзьями, синхронизация видео, webrtc watch party, трансляция вкладки со звуком, syncwave" />
+    <meta name="author" content="Alexcdraft" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://alexcrdaf.github.io/syncwave/" />
+    
+    <!-- Open Graph / Facebook / VK / Telegram -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://alexcrdaf.github.io/syncwave/" />
+    <meta property="og:title" content="SyncWave — Один экран. Одна компания." />
+    <meta property="og:description" content="Бесплатный совместный просмотр видео и фильмов в реальном времени. P2P шифрование, голосовая связь и трансляция экрана со звуком." />
+    <meta property="og:image" content="https://alexcrdaf.github.io/syncwave/public/icons.svg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://alexcrdaf.github.io/syncwave/" />
+    <meta property="twitter:title" content="SyncWave — Watch Party Platform" />
+    <meta property="twitter:description" content="Смотрите видео синхронно с друзьями прямо в браузере. WebRTC P2P без сторонних серверов." />
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "SyncWave",
+      "url": "https://alexcrdaf.github.io/syncwave/",
+      "description": "Современная P2P платформа для синхронного совместного просмотра видео и трансляции вкладок со звуком.",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "RUB"
+      },
+      "creator": {
+        "@type": "Person",
+        "name": "Alexcdraft"
+      }
+    }
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="/public/icons.svg" />
   </head>
-  <body>
+  <body class="bg-[#07080d] text-slate-100 antialiased selection:bg-purple-500 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://alexcrdaf.github.io/syncwave/sitemap.xml
