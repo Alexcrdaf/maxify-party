@@ -39,7 +39,6 @@ export function App() {
   const roomManagerRef = useRef<RoomManager | null>(null);
   const screenServiceRef = useRef<ScreenCaptureService>(new ScreenCaptureService());
   const voiceServiceRef = useRef<VoiceChatService>(new VoiceChatService());
-  const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -133,10 +132,9 @@ export function App() {
         if (isScreen) {
           setScreenStream(stream);
         } else {
-          if (voiceAudioRef.current) {
-            voiceAudioRef.current.srcObject = stream;
-            voiceAudioRef.current.play().catch(() => {});
-          }
+          const audio = new Audio();
+          audio.srcObject = stream;
+          audio.play().catch(() => {});
         }
       },
     });
@@ -209,10 +207,9 @@ export function App() {
         if (isScreen) {
           setScreenStream(stream);
         } else {
-          if (voiceAudioRef.current) {
-            voiceAudioRef.current.srcObject = stream;
-            voiceAudioRef.current.play().catch(() => {});
-          }
+          const audio = new Audio();
+          audio.srcObject = stream;
+          audio.play().catch(() => {});
         }
       },
     });
@@ -375,9 +372,6 @@ export function App() {
           </div>
         </main>
       )}
-
-      {/* Hidden audio element for receiving peer voice stream */}
-      <audio ref={voiceAudioRef} autoPlay playsInline className="hidden" />
     </div>
   );
 }

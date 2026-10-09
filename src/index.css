@@ -2,35 +2,19 @@
 
 @layer base {
   :root {
-    --color-bg-primary: #040508;
-    --color-bg-secondary: #0a0c14;
-  }
-
-  /* User-select restriction: Protect entire interface from copying except code & name */
-  *, *::before, *::after {
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-  }
-
-  /* Allow text selection strictly for Room Code, Participant names, chat inputs and forms */
-  input,
-  textarea,
-  .selectable-text,
-  .room-code-badge {
-    user-select: text !important;
-    -webkit-user-select: text !important;
-    -moz-user-select: text !important;
-    -ms-user-select: text !important;
+    --color-bg-primary: #07080d;
+    --color-bg-secondary: #0f111a;
+    --color-bg-card: rgba(18, 22, 34, 0.7);
+    --color-accent-purple: #9333ea;
+    --color-accent-blue: #3b82f6;
+    --color-accent-cyan: #06b6d4;
   }
 
   body {
     background-color: var(--color-bg-primary);
     background-image: 
-      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(168, 85, 247, 0.22), transparent),
-      radial-gradient(ellipse 60% 50% at 85% 100%, rgba(59, 130, 246, 0.18), transparent),
-      radial-gradient(circle 600px at 50% 50%, rgba(236, 72, 153, 0.08), transparent);
+      radial-gradient(at 0% 0%, rgba(147, 51, 234, 0.12) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
     background-attachment: fixed;
     color: #f8fafc;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -38,79 +22,47 @@
   }
 }
 
-/* Hyper-Realistic Liquid Glass (Настоящее жидкое стекло) */
-.liquid-glass {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.09) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  backdrop-filter: blur(40px) saturate(210%) brightness(110%);
-  -webkit-backdrop-filter: blur(40px) saturate(210%) brightness(110%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 
-    0 25px 60px -10px rgba(0, 0, 0, 0.75),
-    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.25),
-    inset 0 -1.5px 1.5px rgba(0, 0, 0, 0.4);
-}
-
-.liquid-glass-subtle {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0.01) 100%
-  );
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+/* Glassmorphism 2026 polish */
+.glass-panel {
+  background: rgba(15, 18, 30, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
-.liquid-glass-boosty {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.28) 0%, rgba(239, 68, 68, 0.18) 100%);
-  backdrop-filter: blur(25px) saturate(190%);
-  -webkit-backdrop-filter: blur(25px) saturate(190%);
-  border: 1px solid rgba(249, 115, 22, 0.4);
-  box-shadow: 0 10px 30px -5px rgba(249, 115, 22, 0.35);
-}
-
-.liquid-glass-boosty:hover {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.4) 0%, rgba(239, 68, 68, 0.3) 100%);
-  border-color: rgba(249, 115, 22, 0.6);
-  box-shadow: 0 12px 35px -3px rgba(249, 115, 22, 0.55);
+.glass-panel-subtle {
+  background: rgba(12, 15, 25, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glow-purple {
-  box-shadow: 0 0 35px -5px rgba(168, 85, 247, 0.45);
+  box-shadow: 0 0 30px -5px rgba(168, 85, 247, 0.4);
 }
 
 .glow-blue {
-  box-shadow: 0 0 35px -5px rgba(59, 130, 246, 0.45);
+  box-shadow: 0 0 30px -5px rgba(59, 130, 246, 0.4);
 }
 
-.glass-panel {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  backdrop-filter: blur(35px) saturate(200%);
-  -webkit-backdrop-filter: blur(35px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7);
+/* Interactive elements */
+button, a {
+  cursor: pointer;
 }
 
-/* Custom modern scrollbar */
+/* Custom premium scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(4, 5, 8, 0.6);
+  background: rgba(8, 10, 16, 0.4);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.35);
 }

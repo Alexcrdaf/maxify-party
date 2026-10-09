@@ -32,7 +32,6 @@ export class RoomManager {
   private callbacks: RoomCallbacks;
   private heartbeatTimer: any = null;
   private activeLocalStream: MediaStream | null = null;
-  private localVoiceStream: MediaStream | null = null;
   private isScreenSharing: boolean = false;
 
   constructor(myProfile: Participant, callbacks: RoomCallbacks) {
@@ -70,11 +69,9 @@ export class RoomManager {
         resolve(id);
       });
 
-      this.peer.on('error', (err: any) => {
+      this.peer.on('error', (err) => {
         if (err.type === 'unavailable-id') {
           this.callbacks.onError('Комната с таким кодом уже активна. Попробуйте другой код.');
-        } else if (err.type === 'server-error') {
-          this.callbacks.onError('Облачный сигнальный сервер PeerJS временно перегружен или недоступен. Попробуйте нажать еще раз через несколько секунд.');
         } else {
           this.callbacks.onError(`Ошибка сети WebRTC: ${err.message || err.type}`);
         }
@@ -86,13 +83,7 @@ export class RoomManager {
       });
 
       this.peer.on('call', (call) => {
-        const isScreen = call.metadata?.isScreenShare === true;
-        // Answer call with our own local mic if voice call, so it becomes bidirectional
-        if (!isScreen && this.localVoiceStream) {
-          call.answer(this.localVoiceStream);
-        } else {
-          call.answer();
-        }
+        call.answer();
         this.handleIncomingMediaCall(call);
       });
     });
@@ -159,11 +150,9 @@ export class RoomManager {
         });
       });
 
-      this.peer.on('error', (err: any) => {
+      this.peer.on('error', (err) => {
         if (err.type === 'peer-unavailable') {
           this.callbacks.onError(`Комната «${this.roomId}» не найдена или ведущий вышел.`);
-        } else if (err.type === 'server-error') {
-          this.callbacks.onError('Облачный сигнальный сервер PeerJS временно перегружен. Повторите попытку через пару секунд.');
         } else {
           this.callbacks.onError(`Ошибка сети: ${err.message || err.type}`);
         }
@@ -171,12 +160,7 @@ export class RoomManager {
       });
 
       this.peer.on('call', (call) => {
-        const isScreen = call.metadata?.isScreenShare === true;
-        if (!isScreen && this.localVoiceStream) {
-          call.answer(this.localVoiceStream);
-        } else {
-          call.answer();
-        }
+        call.answer();
         this.handleIncomingMediaCall(call);
       });
     });
@@ -217,16 +201,15 @@ export class RoomManager {
   }
 
   private handleIncomingMediaCall(call: MediaConnection) {
-    const isScreen = call.metadata?.isScreenShare === true;
-    const callKey = `${call.peer}-${isScreen ? 'screen' : 'voice'}`;
-    this.mediaCalls.set(callKey, call);
+    this.mediaCalls.set(call.peer, call);
 
     call.on('stream', (remoteStream) => {
+      const isScreen = call.metadata?.isScreenShare === true;
       this.callbacks.onIncomingStream(remoteStream, call.peer, isScreen);
     });
 
     call.on('close', () => {
-      this.mediaCalls.delete(callKey);
+      this.mediaCalls.delete(call.peer);
     });
   }
 
@@ -370,33 +353,12 @@ export class RoomManager {
   }
 
   public sendVoiceStream(stream: MediaStream) {
-    this.localVoiceStream = stream;
-
     this.connections.forEach((_conn, peerId) => {
-      if (this.peer) {
-        const existingVoice = this.mediaCalls.get(`${peerId}-voice`);
-        if (existingVoice) {
-          // If a call is already established, replace audio track to avoid renegotiation drop
-          const audioTrack = stream.getAudioTracks()[0];
-          const sender = (existingVoice as any).peerConnection
-            ?.getSenders()
-            ?.find((s: any) => s.track && s.track.kind === 'audio');
-          if (sender && audioTrack) {
-            sender.replaceTrack(audioTrack);
-            return;
-          }
-          existingVoice.close();
-        }
-
+      if (this.peer && !this.mediaCalls.has(peerId)) {
         const call = this.peer.call(peerId, stream, {
           metadata: { isScreenShare: false },
         });
-        if (call) {
-          this.mediaCalls.set(`${peerId}-voice`, call);
-          call.on('stream', (remoteStream) => {
-            this.callbacks.onIncomingStream(remoteStream, call.peer, false);
-          });
-        }
+        this.handleIncomingMediaCall(call);
       }
     });
   }
@@ -407,19 +369,10 @@ export class RoomManager {
 
     this.connections.forEach((_conn, peerId) => {
       if (this.peer) {
-        const existingScreen = this.mediaCalls.get(`${peerId}-screen`);
-        if (existingScreen) {
-          existingScreen.close();
-        }
         const call = this.peer.call(peerId, stream, {
           metadata: { isScreenShare: true },
         });
-        if (call) {
-          this.mediaCalls.set(`${peerId}-screen`, call);
-          call.on('stream', (remoteStream) => {
-            this.callbacks.onIncomingStream(remoteStream, call.peer, true);
-          });
-        }
+        this.handleIncomingMediaCall(call);
       }
     });
   }

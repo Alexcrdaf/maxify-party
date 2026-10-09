@@ -24,19 +24,16 @@ export class ScreenCaptureService {
     }
 
     try {
-      const displayMediaOptions: any = {
+      const displayMediaOptions: DisplayMediaStreamOptions = {
         video: {
           displaySurface: 'browser',
-          width: { ideal: 1920, max: 3840 },
-          height: { ideal: 1080, max: 2160 },
-          frameRate: { ideal: 60, max: 60 },
+          frameRate: { ideal: 30, max: 60 },
         },
         audio: options.withAudio
           ? {
               echoCancellation: false,
               autoGainControl: false,
               noiseSuppression: false,
-              channelCount: 2,
             }
           : false,
       };
@@ -46,11 +43,6 @@ export class ScreenCaptureService {
 
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
-        // Optimize track for high-detail motion & text clarity
-        if ('contentHint' in videoTrack) {
-          (videoTrack as any).contentHint = 'detail';
-        }
-
         videoTrack.onended = () => {
           this.stopCapture();
           if (onEndedCallback) {

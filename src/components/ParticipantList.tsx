@@ -49,7 +49,7 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
 
                 <div className="truncate">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-slate-200 truncate selectable-text">
+                    <span className="text-sm font-medium text-slate-200 truncate">
                       {p.name}
                     </span>
                     {isMe && <span className="text-[10px] text-slate-400">(Вы)</span>}

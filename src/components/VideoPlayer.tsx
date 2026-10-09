@@ -42,9 +42,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1); // 1x to 3x zoom
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 }); // Drag pan position
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
   const isSyncingRef = useRef(false);
 
   // Bind screenStream if available
@@ -165,41 +162,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleZoomOut = () => {
-    setZoomLevel((prev) => {
-      const next = Math.max(prev - 0.25, 1);
-      if (next === 1) {
-        setPanOffset({ x: 0, y: 0 });
-      }
-      return next;
-    });
+    setZoomLevel((prev) => Math.max(prev - 0.25, 1));
   };
 
   const handleResetZoom = () => {
     setZoomLevel(1);
-    setPanOffset({ x: 0, y: 0 });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Only allow drag when zoomed in or with Middle mouse / Left mouse
-    if (zoomLevel > 1 || e.button === 1) {
-      setIsDragging(true);
-      dragStartRef.current = {
-        x: e.clientX - panOffset.x,
-        y: e.clientY - panOffset.y,
-      };
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setPanOffset({
-      x: e.clientX - dragStartRef.current.x,
-      y: e.clientY - dragStartRef.current.y,
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
   };
 
   const formatTime = (secs: number) => {
@@ -212,30 +179,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      className={`relative w-full aspect-video rounded-3xl overflow-hidden bg-black/95 border border-white/10 shadow-2xl flex flex-col justify-end group select-none transition-all ${
-        zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : ''
-      }`}
+      className="relative w-full aspect-video rounded-3xl overflow-hidden bg-black/95 border border-white/10 shadow-2xl flex flex-col justify-end group select-none transition-all"
     >
-      {/* Video Element with Zoom scale and Pan drag offset */}
-      <div
-        className="absolute inset-0 overflow-hidden flex items-center justify-center pointer-events-auto"
-        onMouseDown={handleMouseDown}
-      >
+      {/* Video Element with Zoom scale */}
+      <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
         <video
           ref={videoRef}
-          className="w-full h-full object-contain pointer-events-none"
-          style={{
-            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
-            transition: isDragging ? 'none' : 'transform 150ms ease-out',
-          }}
+          className="w-full h-full object-contain transition-transform duration-200 ease-out"
+          style={{ transform: `scale(${zoomLevel})` }}
           playsInline
           onPlay={handlePlay}
           onPause={handlePause}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
+          onClick={togglePlay}
         />
       </div>
 
@@ -260,86 +217,76 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Top Floating Control Bar: Left = Stream status, Right = Zoom & Fullscreen & Audio controls */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between gap-3 pointer-events-auto">
-        {/* Left Status Bar */}
-        <div>
-          {screenStream && (
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 text-xs font-semibold backdrop-blur-md shadow-lg animate-pulse">
-              <MonitorPlay className="w-4 h-4 text-red-400" />
-              <span className="hidden sm:inline">Прямая трансляция вкладки</span>
-              <span className="sm:hidden">Трансляция</span>
-            </div>
-          )}
-        </div>
+      {/* Screen Sharing Top Floating Control Bar */}
+      {screenStream && (
+        <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between gap-3 pointer-events-auto">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 text-xs font-semibold backdrop-blur-md shadow-lg animate-pulse">
+            <MonitorPlay className="w-4 h-4 text-red-400" />
+            <span>Прямая трансляция вкладки</span>
+          </div>
 
-        {/* Right Consolidated Controls Bar (Single cleanly spaced bar) */}
-        {(playbackState.sourceUrl || screenStream) && (
-          <div className="flex items-center gap-1.5 liquid-glass px-2.5 py-1.5 rounded-2xl border border-white/10 shadow-2xl">
-            {/* Stream Audio Mute & Stop Button (if streaming) */}
-            {screenStream && (
-              <>
-                <button
-                  onClick={toggleMute}
-                  className="p-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition"
-                  title={isMuted ? 'Включить звук трансляции' : 'Выключить звук трансляции'}
-                >
-                  {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-                </button>
-
-                {onStopScreenShare && (
-                  <button
-                    onClick={onStopScreenShare}
-                    className="px-3 py-1 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition shadow-md whitespace-nowrap"
-                  >
-                    Остановить показ
-                  </button>
-                )}
-
-                <div className="w-[1px] h-4 bg-white/20 mx-1" />
-              </>
-            )}
-
-            {/* Zoom Controls */}
+          {/* Stream Overlay Controls: Mute & Stop */}
+          <div className="flex items-center gap-2 glass-panel px-3 py-1.5 rounded-2xl border border-white/10 shadow-lg">
             <button
-              onClick={handleZoomIn}
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition"
-              title="Приблизить (+25%)"
+              onClick={toggleMute}
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition"
+              title={isMuted ? 'Включить звук трансляции' : 'Выключить звук трансляции'}
             >
-              <ZoomIn className="w-4 h-4" />
+              {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
             </button>
-            <button
-              onClick={handleZoomOut}
-              disabled={zoomLevel <= 1}
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition disabled:opacity-30"
-              title="Отдалить (-25%)"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            {zoomLevel > 1 && (
+
+            {onStopScreenShare && (
               <button
-                onClick={handleResetZoom}
-                className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition"
-                title="Сбросить масштаб"
+                onClick={onStopScreenShare}
+                className="px-3 py-1 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition shadow-md"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                Остановить показ
               </button>
             )}
-            <span className="text-[11px] font-mono text-purple-300 px-1 font-semibold">{Math.round(zoomLevel * 100)}%</span>
-
-            <div className="w-[1px] h-4 bg-white/20 mx-1" />
-
-            {/* Fullscreen Button */}
-            <button
-              onClick={toggleFullscreen}
-              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition"
-              title={isFullscreen ? 'Выйти из полноэкранного режима' : 'На весь экран'}
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Floating Zoom and Screen Controls Bar (Always available during playback & stream) */}
+      {(playbackState.sourceUrl || screenStream) && (
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 glass-panel px-2.5 py-1.5 rounded-2xl border border-white/10 opacity-80 hover:opacity-100 transition-opacity">
+          <button
+            onClick={handleZoomIn}
+            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition"
+            title="Приблизить (+25%)"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            disabled={zoomLevel <= 1}
+            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition disabled:opacity-30"
+            title="Отдалить (-25%)"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          {zoomLevel > 1 && (
+            <button
+              onClick={handleResetZoom}
+              className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition"
+              title="Сбросить масштаб"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <span className="text-[11px] font-mono text-purple-300 px-1 font-semibold">{Math.round(zoomLevel * 100)}%</span>
+
+          <div className="w-[1px] h-4 bg-white/20 mx-1" />
+
+          <button
+            onClick={toggleFullscreen}
+            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition"
+            title={isFullscreen ? 'Выйти из полноэкранного режима' : 'На весь экран'}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
+      )}
 
       {/* Empty State */}
       {!playbackState.sourceUrl && !screenStream && !externalNotice && (
