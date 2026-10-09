@@ -47,15 +47,20 @@ export class RoomManager {
     return new Promise((resolve, reject) => {
       this.callbacks.onConnectionStatusChange('connecting');
 
-      this.peer = new Peer(hostPeerId, {
-        host: APP_CONFIG.peerJsHost,
-        port: APP_CONFIG.peerJsPort,
-        path: APP_CONFIG.peerJsPath,
-        secure: APP_CONFIG.peerJsSecure,
+      const peerOptions: any = {
         config: {
           iceServers: APP_CONFIG.iceServers,
         },
-      });
+      };
+
+      if (APP_CONFIG.peerJsHost) {
+        peerOptions.host = APP_CONFIG.peerJsHost;
+        peerOptions.port = APP_CONFIG.peerJsPort;
+        peerOptions.path = APP_CONFIG.peerJsPath;
+        peerOptions.secure = APP_CONFIG.peerJsSecure;
+      }
+
+      this.peer = new Peer(hostPeerId, peerOptions);
 
       this.peer.on('open', (id) => {
         this.myId = id;
@@ -92,15 +97,20 @@ export class RoomManager {
     return new Promise((resolve, reject) => {
       this.callbacks.onConnectionStatusChange('connecting');
 
-      this.peer = new Peer({
-        host: APP_CONFIG.peerJsHost,
-        port: APP_CONFIG.peerJsPort,
-        path: APP_CONFIG.peerJsPath,
-        secure: APP_CONFIG.peerJsSecure,
+      const peerOptions: any = {
         config: {
           iceServers: APP_CONFIG.iceServers,
         },
-      });
+      };
+
+      if (APP_CONFIG.peerJsHost) {
+        peerOptions.host = APP_CONFIG.peerJsHost;
+        peerOptions.port = APP_CONFIG.peerJsPort;
+        peerOptions.path = APP_CONFIG.peerJsPath;
+        peerOptions.secure = APP_CONFIG.peerJsSecure;
+      }
+
+      this.peer = new Peer(peerOptions);
 
       this.peer.on('open', (id) => {
         this.myId = id;
