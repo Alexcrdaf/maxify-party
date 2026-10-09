@@ -212,8 +212,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
       <footer className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
         <div className="flex items-center gap-2">
           <span>© 2026 SyncWave by Alexcdraft.</span>
-          <span className="flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-            <ShieldCheck className="w-3 h-3" /> 100% P2P Legal
+          <span className="flex items-center text-[11px] text-emerald-400 bg-emerald-500/10 p-1 rounded-full border border-emerald-500/20" title="Защищено сквозным P2P шифрованием WebRTC">
+            <ShieldCheck className="w-3.5 h-3.5" />
           </span>
         </div>
 

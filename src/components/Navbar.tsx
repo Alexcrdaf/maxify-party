@@ -21,9 +21,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onGoHome, roomCode, isHost }) =>
           <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-purple-300 bg-clip-text text-transparent">
             SyncWave
           </span>
-          <span className="hidden sm:inline-block ml-2 text-[11px] text-purple-300 font-medium px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/25 shadow-sm">
-            v1.2 Liquid
-          </span>
         </div>
       </div>
 
@@ -44,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onGoHome, roomCode, isHost }) =>
         {roomCode && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 shadow-inner">
             <span className="text-xs text-slate-400">Комната:</span>
-            <span className="text-sm font-mono font-bold tracking-wider text-purple-400">{roomCode}</span>
+            <span className="text-sm font-mono font-bold tracking-wider text-purple-400 selectable-text room-code-badge">{roomCode}</span>
             {isHost && (
               <span className="text-[10px] bg-purple-500/25 text-purple-200 px-1.5 py-0.5 rounded-lg font-medium border border-purple-500/35">
                 Ведущий
