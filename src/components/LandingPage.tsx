@@ -8,6 +8,9 @@ import {
   Heart,
   ExternalLink,
   ShieldCheck,
+  HelpCircle,
+  Film,
+  Lock,
 } from 'lucide-react';
 import { isValidRoomCode } from '../config';
 
@@ -128,7 +131,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
           <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-400 mb-4 shadow-lg">
             <Zap className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-white mb-2">Мгновенная P2P-синхронизация</h3>
+          <h2 className="text-base font-bold text-white mb-2">Мгновенная P2P-синхронизация</h2>
           <p className="text-xs text-slate-400 leading-relaxed font-light">
             Воспроизведение, пауза и перемотка управляются ведущим в реальном времени через WebRTC DataChannel с нулевой серверной задержкой.
           </p>
@@ -138,7 +141,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
           <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 mb-4 shadow-lg">
             <Monitor className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-white mb-2">Трансляция вкладки со звуком</h3>
+          <h2 className="text-base font-bold text-white mb-2">Трансляция вкладки со звуком</h2>
           <p className="text-xs text-slate-400 leading-relaxed font-light">
             Полноценный захват любой вкладки браузера с прямой передачей оригинального аудиопотока и функциями масштабирования (Zoom).
           </p>
@@ -148,12 +151,62 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
           <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 mb-4 shadow-lg">
             <Volume2 className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-white mb-2">Голосовой чат с VAD</h3>
+          <h2 className="text-base font-bold text-white mb-2">Голосовой чат с VAD</h2>
           <p className="text-xs text-slate-400 leading-relaxed font-light">
             Общайтесь голосом во время просмотра. Индикатор активности речи в реальном времени и раздельные аудиоканалы против эха.
           </p>
         </div>
       </div>
+
+      {/* SEO FAQ Section (Вопросы и ответы) */}
+      <section className="my-12 liquid-glass p-8 rounded-3xl text-left border border-white/10">
+        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-purple-400" />
+          Часто задаваемые вопросы о совместном просмотре (Watch Party)
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300">
+          <div className="space-y-2">
+            <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm">
+              <Film className="w-4 h-4 text-blue-400" />
+              Как работает совместный просмотр онлайн?
+            </h3>
+            <p className="text-slate-400 leading-relaxed">
+              Один участник создаёт комнату и отправляет короткий код другу. Видеосинхронизация происходит напрямую браузер-в-браузер (WebRTC DataChannel), благодаря чему перемотка и пауза срабатывают у всех одновременно без задержек.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm">
+              <Lock className="w-4 h-4 text-emerald-400" />
+              Безопасен ли сервис и сохраняются ли данные?
+            </h3>
+            <p className="text-slate-400 leading-relaxed">
+              SyncWave полностью анонимен. У нас нет базы данных пользователей, истории просмотров или личной информации. Все голосовые потоки и чат шифруются сквозным протоколом DTLS/SRTP.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm">
+              <Monitor className="w-4 h-4 text-amber-400" />
+              Можно ли смотреть со звуком вкладки?
+            </h3>
+            <p className="text-slate-400 leading-relaxed">
+              Да! Режим «Трансляция вкладки» позволяет передавать системный звук выбранной вкладки (YouTube, плеер или фильм) в оригинальном качестве без микрофонных помех.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm">
+              <ShieldCheck className="w-4 h-4 text-purple-400" />
+              Нужно ли что-то скачивать или регистрироваться?
+            </h3>
+            <p className="text-slate-400 leading-relaxed">
+              Нет. Сервис работает прямо в современных браузерах (Chrome, Edge, Firefox, Safari) без расширений и без регистрации.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Footer with Boosty & Legal Safety */}
       <footer className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">

@@ -26,31 +26,64 @@
     <meta property="twitter:title" content="SyncWave — Watch Party Platform" />
     <meta property="twitter:description" content="Смотрите видео синхронно с друзьями прямо в браузере. WebRTC P2P без сторонних серверов." />
 
-    <!-- Schema.org Structured Data -->
+    <!-- Schema.org WebApplication & FAQPage Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "SyncWave",
-      "url": "https://alexcrdaf.github.io/syncwave/",
-      "description": "Современная P2P платформа для синхронного совместного просмотра видео и трансляции вкладок со звуком.",
-      "applicationCategory": "MultimediaApplication",
-      "operatingSystem": "All",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "RUB"
-      },
-      "creator": {
-        "@type": "Person",
-        "name": "Alexcdraft"
-      }
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "name": "SyncWave",
+          "url": "https://alexcrdaf.github.io/syncwave/",
+          "description": "Современная P2P платформа для синхронного совместного просмотра видео и трансляции вкладок со звуком.",
+          "applicationCategory": "MultimediaApplication",
+          "operatingSystem": "All",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "RUB"
+          },
+          "creator": {
+            "@type": "Person",
+            "name": "Alexcdraft"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Как работает совместный просмотр онлайн?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Один участник создаёт комнату и отправляет короткий код другу. Видеосинхронизация происходит напрямую браузер-в-браузер (WebRTC DataChannel), благодаря чему перемотка и пауза срабатывают у всех одновременно без задержек."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Безопасен ли сервис и сохраняются ли данные?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "SyncWave полностью анонимен. У нас нет базы данных пользователей, истории просмотров или личной информации. Все голосовые потоки и чат шифруются сквозным протоколом DTLS/SRTP."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Можно ли смотреть со звуком вкладки?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Да! Режим «Трансляция вкладки» позволяет передавать системный звук выбранной вкладки в оригинальном качестве без микрофонных помех."
+              }
+            }
+          ]
+        }
+      ]
     }
     </script>
 
     <link rel="icon" type="image/svg+xml" href="/public/icons.svg" />
   </head>
-  <body class="bg-[#07080d] text-slate-100 antialiased selection:bg-purple-500 selection:text-white">
+  <body class="bg-[#05060a] text-slate-100 antialiased selection:bg-purple-500 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
