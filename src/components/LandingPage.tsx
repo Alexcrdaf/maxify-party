@@ -3,7 +3,6 @@ import {
   Monitor,
   Zap,
   ArrowRight,
-  Sparkles,
   Volume2,
   ShieldCheck,
 } from 'lucide-react';
@@ -47,11 +46,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
     <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-between py-12 px-6 max-w-6xl mx-auto">
       {/* Hero Section */}
       <div className="flex flex-col items-center text-center my-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass text-purple-200 text-xs font-semibold mb-6 shadow-lg shadow-purple-500/10">
-          <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-spin" />
-          <span>Синхронный просмотр нового поколения 2026</span>
-        </div>
-
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4 max-w-3xl leading-tight">
           Один экран.{' '}
           <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-blue-400 bg-clip-text text-transparent">
