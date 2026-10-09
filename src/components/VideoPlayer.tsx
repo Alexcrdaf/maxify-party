@@ -42,6 +42,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1); // 1x to 3x zoom
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 }); // Drag pan position
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
   const isSyncingRef = useRef(false);
 
   // Bind screenStream if available
@@ -162,11 +165,41 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleZoomOut = () => {
-    setZoomLevel((prev) => Math.max(prev - 0.25, 1));
+    setZoomLevel((prev) => {
+      const next = Math.max(prev - 0.25, 1);
+      if (next === 1) {
+        setPanOffset({ x: 0, y: 0 });
+      }
+      return next;
+    });
   };
 
   const handleResetZoom = () => {
     setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only allow drag when zoomed in or with Middle mouse / Left mouse
+    if (zoomLevel > 1 || e.button === 1) {
+      setIsDragging(true);
+      dragStartRef.current = {
+        x: e.clientX - panOffset.x,
+        y: e.clientY - panOffset.y,
+      };
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPanOffset({
+      x: e.clientX - dragStartRef.current.x,
+      y: e.clientY - dragStartRef.current.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
   };
 
   const formatTime = (secs: number) => {
@@ -179,20 +212,30 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-video rounded-3xl overflow-hidden bg-black/95 border border-white/10 shadow-2xl flex flex-col justify-end group select-none transition-all"
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      className={`relative w-full aspect-video rounded-3xl overflow-hidden bg-black/95 border border-white/10 shadow-2xl flex flex-col justify-end group select-none transition-all ${
+        zoomLevel > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : ''
+      }`}
     >
-      {/* Video Element with Zoom scale */}
-      <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
+      {/* Video Element with Zoom scale and Pan drag offset */}
+      <div
+        className="absolute inset-0 overflow-hidden flex items-center justify-center pointer-events-auto"
+        onMouseDown={handleMouseDown}
+      >
         <video
           ref={videoRef}
-          className="w-full h-full object-contain transition-transform duration-200 ease-out"
-          style={{ transform: `scale(${zoomLevel})` }}
+          className="w-full h-full object-contain pointer-events-none"
+          style={{
+            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
+            transition: isDragging ? 'none' : 'transform 150ms ease-out',
+          }}
           playsInline
           onPlay={handlePlay}
           onPause={handlePause}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
-          onClick={togglePlay}
         />
       </div>
 
