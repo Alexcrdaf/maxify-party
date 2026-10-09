@@ -69,11 +69,9 @@ export class RoomManager {
         resolve(id);
       });
 
-      this.peer.on('error', (err: any) => {
+      this.peer.on('error', (err) => {
         if (err.type === 'unavailable-id') {
           this.callbacks.onError('Комната с таким кодом уже активна. Попробуйте другой код.');
-        } else if (err.type === 'server-error') {
-          console.warn('PeerJS signaling server-error:', err);
         } else {
           this.callbacks.onError(`Ошибка сети WebRTC: ${err.message || err.type}`);
         }
@@ -112,9 +110,7 @@ export class RoomManager {
         peerOptions.secure = APP_CONFIG.peerJsSecure;
       }
 
-      // Generate unique client ID to prevent retrieveId HTTP failure on public PeerJS server
-      const clientPeerId = `sw-u${Math.random().toString(36).substring(2, 9)}${Date.now().toString(36).slice(-4)}`;
-      this.peer = new Peer(clientPeerId, peerOptions);
+      this.peer = new Peer(peerOptions);
 
       this.peer.on('open', (id) => {
         this.myId = id;
@@ -154,12 +150,9 @@ export class RoomManager {
         });
       });
 
-      this.peer.on('error', (err: any) => {
+      this.peer.on('error', (err) => {
         if (err.type === 'peer-unavailable') {
           this.callbacks.onError(`Комната «${this.roomId}» не найдена или ведущий вышел.`);
-        } else if (err.type === 'server-error') {
-          // Silent or soft fallback - will auto-reconnect or allow user to retry
-          console.warn('PeerJS signaling server-error:', err);
         } else {
           this.callbacks.onError(`Ошибка сети: ${err.message || err.type}`);
         }
