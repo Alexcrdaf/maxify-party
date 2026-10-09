@@ -5,12 +5,7 @@ import {
   ArrowRight,
   Sparkles,
   Volume2,
-  Heart,
-  ExternalLink,
   ShieldCheck,
-  HelpCircle,
-  Film,
-  Lock,
 } from 'lucide-react';
 import { isValidRoomCode } from '../config';
 
@@ -68,7 +63,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
           Смотрите фильмы, сериалы и стримы вместе с друзьями прямо в браузере с идеальной синхронизацией, трансляцией вкладки со звуком и голосовой связью.
         </p>
 
-        {/* Liquid Glass Action Card */}
+        {/* Minimalist Liquid Glass Action Card */}
         <div className="liquid-glass p-7 sm:p-9 rounded-3xl max-w-md w-full relative group">
           <div className="mb-5 text-left">
             <label className="block text-xs font-semibold text-slate-300 mb-2">Ваше имя в комнате</label>
@@ -125,7 +120,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
         </div>
       </div>
 
-      {/* Feature Highlights Grid in Liquid Glass */}
+      {/* Clean 3 Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-16">
         <div className="liquid-glass p-7 rounded-3xl flex flex-col items-start text-left transition hover:-translate-y-1">
           <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-400 mb-4 shadow-lg">
@@ -158,76 +153,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
         </div>
       </div>
 
-      {/* SEO FAQ Section (Вопросы и ответы) */}
-      <section className="my-12 liquid-glass p-8 rounded-3xl text-left border border-white/10">
-        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-purple-400" />
-          Часто задаваемые вопросы о совместном просмотре (Watch Party)
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm">
-              <Film className="w-4 h-4 text-blue-400" />
-              Как работает совместный просмотр онлайн?
-            </h3>
-            <p className="text-slate-400 leading-relaxed">
-              Один участник создаёт комнату и отправляет короткий код другу. Видеосинхронизация происходит напрямую браузер-в-браузер (WebRTC DataChannel), благодаря чему перемотка и пауза срабатывают у всех одновременно без задержек.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm">
-              <Lock className="w-4 h-4 text-emerald-400" />
-              Безопасен ли сервис и сохраняются ли данные?
-            </h3>
-            <p className="text-slate-400 leading-relaxed">
-              SyncWave полностью анонимен. У нас нет базы данных пользователей, истории просмотров или личной информации. Все голосовые потоки и чат шифруются сквозным протоколом DTLS/SRTP.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm">
-              <Monitor className="w-4 h-4 text-amber-400" />
-              Можно ли смотреть со звуком вкладки?
-            </h3>
-            <p className="text-slate-400 leading-relaxed">
-              Да! Режим «Трансляция вкладки» позволяет передавать системный звук выбранной вкладки (YouTube, плеер или фильм) в оригинальном качестве без микрофонных помех.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold text-white flex items-center gap-1.5 text-sm">
-              <ShieldCheck className="w-4 h-4 text-purple-400" />
-              Нужно ли что-то скачивать или регистрироваться?
-            </h3>
-            <p className="text-slate-400 leading-relaxed">
-              Нет. Сервис работает прямо в современных браузерах (Chrome, Edge, Firefox, Safari) без расширений и без регистрации.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer with Boosty & Legal Safety */}
-      <footer className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+      {/* Clean Minimal Footer */}
+      <footer className="pt-8 border-t border-white/10 flex items-center justify-between text-xs text-slate-500">
         <div className="flex items-center gap-2">
           <span>© 2026 SyncWave by Alexcdraft.</span>
           <span className="flex items-center text-[11px] text-emerald-400 bg-emerald-500/10 p-1 rounded-full border border-emerald-500/20" title="Защищено сквозным P2P шифрованием WebRTC">
             <ShieldCheck className="w-3.5 h-3.5" />
           </span>
         </div>
-
-        <div className="flex items-center gap-4">
-          <a
-            href="https://boosty.to/vostguy/donate"
-            target="_blank"
-            rel="noreferrer"
-            className="liquid-glass-boosty px-3.5 py-1.5 rounded-xl text-orange-200 hover:text-white text-xs font-semibold flex items-center gap-2 transition active:scale-95 shadow"
-          >
-            <Heart className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
-            <span>Поддержать проект на Boosty</span>
-            <ExternalLink className="w-3 h-3 opacity-70" />
-          </a>
+        <div className="text-[11px] text-slate-600">
+          Open-Source P2P Watch Party
         </div>
       </footer>
     </div>
