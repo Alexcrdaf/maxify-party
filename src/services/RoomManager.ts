@@ -28,10 +28,12 @@ export class RoomManager {
   public isHost: boolean = false;
   public myProfile: Participant;
   private connections: Map<string, DataConnection> = new Map();
+  // Map calls by a composite key: `${peerId}_screen` and `${peerId}_voice`
   private mediaCalls: Map<string, MediaConnection> = new Map();
   private callbacks: RoomCallbacks;
   private heartbeatTimer: any = null;
   private activeLocalStream: MediaStream | null = null;
+  private activeVoiceStream: MediaStream | null = null;
   private isScreenSharing: boolean = false;
 
   constructor(myProfile: Participant, callbacks: RoomCallbacks) {
@@ -83,7 +85,14 @@ export class RoomManager {
       });
 
       this.peer.on('call', (call) => {
-        call.answer();
+        // Auto-answer incoming media calls (voice or screen)
+        // If we have an active voice stream and the call is voice, answer with it
+        const isScreen = call.metadata?.isScreenShare === true;
+        if (!isScreen && this.activeVoiceStream) {
+          call.answer(this.activeVoiceStream);
+        } else {
+          call.answer();
+        }
         this.handleIncomingMediaCall(call);
       });
     });
@@ -160,7 +169,12 @@ export class RoomManager {
       });
 
       this.peer.on('call', (call) => {
-        call.answer();
+        const isScreen = call.metadata?.isScreenShare === true;
+        if (!isScreen && this.activeVoiceStream) {
+          call.answer(this.activeVoiceStream);
+        } else {
+          call.answer();
+        }
         this.handleIncomingMediaCall(call);
       });
     });
@@ -181,6 +195,22 @@ export class RoomManager {
 
     conn.on('open', () => {
       this.connections.set(conn.peer, conn);
+
+      // If host is currently screen sharing, immediately share the stream with this new peer
+      if (this.isHost && this.activeLocalStream && this.peer) {
+        const call = this.peer.call(conn.peer, this.activeLocalStream, {
+          metadata: { isScreenShare: true },
+        });
+        this.handleIncomingMediaCall(call);
+      }
+
+      // If host has active voice, immediately connect voice with new peer
+      if (this.activeVoiceStream && this.peer) {
+        const vCall = this.peer.call(conn.peer, this.activeVoiceStream, {
+          metadata: { isScreenShare: false },
+        });
+        this.handleIncomingMediaCall(vCall);
+      }
     });
 
     conn.on('data', (data) => {
@@ -201,15 +231,16 @@ export class RoomManager {
   }
 
   private handleIncomingMediaCall(call: MediaConnection) {
-    this.mediaCalls.set(call.peer, call);
+    const isScreen = call.metadata?.isScreenShare === true;
+    const callKey = `${call.peer}_${isScreen ? 'screen' : 'voice'}`;
+    this.mediaCalls.set(callKey, call);
 
     call.on('stream', (remoteStream) => {
-      const isScreen = call.metadata?.isScreenShare === true;
       this.callbacks.onIncomingStream(remoteStream, call.peer, isScreen);
     });
 
     call.on('close', () => {
-      this.mediaCalls.delete(call.peer);
+      this.mediaCalls.delete(callKey);
     });
   }
 
@@ -225,6 +256,7 @@ export class RoomManager {
           };
           this.callbacks.onParticipantJoined(participant);
 
+          // Broadcast to everyone else
           this.broadcast(
             {
               type: 'participant_joined',
@@ -353,12 +385,31 @@ export class RoomManager {
   }
 
   public sendVoiceStream(stream: MediaStream) {
+    this.activeVoiceStream = stream;
+
     this.connections.forEach((_conn, peerId) => {
-      if (this.peer && !this.mediaCalls.has(peerId)) {
+      if (this.peer) {
+        const callKey = `${peerId}_voice`;
+        // Close previous voice call if any
+        if (this.mediaCalls.has(callKey)) {
+          this.mediaCalls.get(callKey)?.close();
+        }
+
         const call = this.peer.call(peerId, stream, {
           metadata: { isScreenShare: false },
         });
         this.handleIncomingMediaCall(call);
+      }
+    });
+  }
+
+  public stopVoiceStream() {
+    this.activeVoiceStream = null;
+    this.connections.forEach((_conn, peerId) => {
+      const callKey = `${peerId}_voice`;
+      if (this.mediaCalls.has(callKey)) {
+        this.mediaCalls.get(callKey)?.close();
+        this.mediaCalls.delete(callKey);
       }
     });
   }
@@ -369,6 +420,11 @@ export class RoomManager {
 
     this.connections.forEach((_conn, peerId) => {
       if (this.peer) {
+        const callKey = `${peerId}_screen`;
+        if (this.mediaCalls.has(callKey)) {
+          this.mediaCalls.get(callKey)?.close();
+        }
+
         const call = this.peer.call(peerId, stream, {
           metadata: { isScreenShare: true },
         });
@@ -382,6 +438,14 @@ export class RoomManager {
       this.activeLocalStream.getTracks().forEach((track) => track.stop());
       this.activeLocalStream = null;
       this.isScreenSharing = false;
+
+      this.connections.forEach((_conn, peerId) => {
+        const callKey = `${peerId}_screen`;
+        if (this.mediaCalls.has(callKey)) {
+          this.mediaCalls.get(callKey)?.close();
+          this.mediaCalls.delete(callKey);
+        }
+      });
     }
   }
 
@@ -431,6 +495,7 @@ export class RoomManager {
   public destroy() {
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     this.stopScreenStream();
+    this.stopVoiceStream();
     this.connections.forEach((conn) => conn.close());
     this.connections.clear();
     this.mediaCalls.forEach((call) => call.close());

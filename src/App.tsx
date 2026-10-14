@@ -39,6 +39,7 @@ export function App() {
   const roomManagerRef = useRef<RoomManager | null>(null);
   const screenServiceRef = useRef<ScreenCaptureService>(new ScreenCaptureService());
   const voiceServiceRef = useRef<VoiceChatService>(new VoiceChatService());
+  const remoteAudioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -128,13 +129,24 @@ export function App() {
       onConnectionStatusChange: (status) => {
         setConnectionStatus(status);
       },
-      onIncomingStream: (stream, _senderId, isScreen) => {
+      onIncomingStream: (stream, senderId, isScreen) => {
         if (isScreen) {
           setScreenStream(stream);
         } else {
-          const audio = new Audio();
-          audio.srcObject = stream;
-          audio.play().catch(() => {});
+          // Play remote voice audio via persistent DOM element with autoplay
+          let audioEl = remoteAudioElementsRef.current.get(senderId);
+          if (!audioEl) {
+            audioEl = document.createElement('audio');
+            audioEl.autoplay = true;
+            (audioEl as any).playsInline = true;
+            (audioEl as any).style = 'display: none;';
+            document.body.appendChild(audioEl);
+            remoteAudioElementsRef.current.set(senderId, audioEl);
+          }
+          audioEl.srcObject = stream;
+          audioEl.play().catch((err) => {
+            console.warn('Autoplay prevented, requires user interaction:', err);
+          });
         }
       },
     });
@@ -203,13 +215,23 @@ export function App() {
       onConnectionStatusChange: (status) => {
         setConnectionStatus(status);
       },
-      onIncomingStream: (stream, _senderId, isScreen) => {
+      onIncomingStream: (stream, senderId, isScreen) => {
         if (isScreen) {
           setScreenStream(stream);
         } else {
-          const audio = new Audio();
-          audio.srcObject = stream;
-          audio.play().catch(() => {});
+          let audioEl = remoteAudioElementsRef.current.get(senderId);
+          if (!audioEl) {
+            audioEl = document.createElement('audio');
+            audioEl.autoplay = true;
+            (audioEl as any).playsInline = true;
+            (audioEl as any).style = 'display: none;';
+            document.body.appendChild(audioEl);
+            remoteAudioElementsRef.current.set(senderId, audioEl);
+          }
+          audioEl.srcObject = stream;
+          audioEl.play().catch((err) => {
+            console.warn('Autoplay prevented, requires user interaction:', err);
+          });
         }
       },
     });
@@ -298,6 +320,12 @@ export function App() {
     roomManagerRef.current?.destroy();
     screenServiceRef.current.stopCapture();
     voiceServiceRef.current.stop();
+    remoteAudioElementsRef.current.forEach((audioEl) => {
+      audioEl.pause();
+      audioEl.srcObject = null;
+      audioEl.remove();
+    });
+    remoteAudioElementsRef.current.clear();
     setInRoom(false);
     setScreenStream(null);
     setIsScreenSharing(false);

@@ -1,5 +1,6 @@
 export interface ScreenShareOptions {
   withAudio?: boolean;
+  frameRate?: number;
 }
 
 export class ScreenCaptureService {
@@ -14,7 +15,7 @@ export class ScreenCaptureService {
   }
 
   public async startCapture(
-    options: ScreenShareOptions = { withAudio: true },
+    options: ScreenShareOptions = { withAudio: true, frameRate: 60 },
     onEndedCallback?: () => void
   ): Promise<MediaStream> {
     if (!this.isSupported()) {
@@ -24,10 +25,13 @@ export class ScreenCaptureService {
     }
 
     try {
-      const displayMediaOptions: DisplayMediaStreamOptions = {
+      const targetFps = options.frameRate || 60;
+      const displayMediaOptions: any = {
         video: {
           displaySurface: 'browser',
-          frameRate: { ideal: 30, max: 60 },
+          frameRate: { ideal: targetFps, max: targetFps },
+          width: { ideal: 1920, max: 2560 },
+          height: { ideal: 1080, max: 1440 },
         },
         audio: options.withAudio
           ? {
@@ -43,6 +47,17 @@ export class ScreenCaptureService {
 
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
+        // Enforce 60 FPS constraint if browser supports applyConstraints
+        try {
+          if (typeof videoTrack.applyConstraints === 'function') {
+            await videoTrack.applyConstraints({
+              frameRate: { ideal: targetFps, max: targetFps },
+            });
+          }
+        } catch (_) {
+          // Fallback gracefully if applyConstraints is not fully supported
+        }
+
         videoTrack.onended = () => {
           this.stopCapture();
           if (onEndedCallback) {
