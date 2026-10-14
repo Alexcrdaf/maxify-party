@@ -71,9 +71,13 @@ export class RoomManager {
         resolve(id);
       });
 
-      this.peer.on('error', (err) => {
+      this.peer.on('error', (err: any) => {
         if (err.type === 'unavailable-id') {
           this.callbacks.onError('Комната с таким кодом уже активна. Попробуйте другой код.');
+        } else if (err.type === 'server-error' || err.type === 'socket-error' || err.type === 'network') {
+          this.callbacks.onError(
+            'Ошибка подключения к серверу сигнализации WebRTC (0.peerjs.com). В РФ некоторые провайдеры блокируют серверы сигнализации. Попробуйте включить VPN или подключиться через мобильный интернет.'
+          );
         } else {
           this.callbacks.onError(`Ошибка сети WebRTC: ${err.message || err.type}`);
         }
@@ -119,7 +123,10 @@ export class RoomManager {
         peerOptions.secure = APP_CONFIG.peerJsSecure;
       }
 
-      this.peer = new Peer(peerOptions);
+      // By providing an explicit alphanumeric ID, PeerJS skips the HTTP retrieveId() call (fetch to 0.peerjs.com/peerjs/id)
+      // which is frequently blocked or filtered by ISPs in the Russian Federation (РФ) and causes 'server-error'.
+      const guestPeerId = `syncwave-guest-${this.roomId}-${Math.random().toString(36).substring(2, 9)}`;
+      this.peer = new Peer(guestPeerId, peerOptions);
 
       this.peer.on('open', (id) => {
         this.myId = id;
@@ -159,9 +166,13 @@ export class RoomManager {
         });
       });
 
-      this.peer.on('error', (err) => {
+      this.peer.on('error', (err: any) => {
         if (err.type === 'peer-unavailable') {
-          this.callbacks.onError(`Комната «${this.roomId}» не найдена или ведущий вышел.`);
+          this.callbacks.onError(`Комната «${this.roomId}» не найдена или ведущий ещё не создал её.`);
+        } else if (err.type === 'server-error' || err.type === 'socket-error' || err.type === 'network') {
+          this.callbacks.onError(
+            'Ошибка подключения к серверу сигнализации WebRTC (0.peerjs.com). В РФ провайдеры иногда блокируют или фильтруют этот узел. Попробуйте обновить страницу или подключиться через VPN / мобильный интернет.'
+          );
         } else {
           this.callbacks.onError(`Ошибка сети: ${err.message || err.type}`);
         }
