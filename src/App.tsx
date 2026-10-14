@@ -132,6 +132,24 @@ export function App() {
       onIncomingStream: (stream, senderId, isScreen) => {
         if (isScreen) {
           setScreenStream(stream);
+
+          const screenAudioTracks = stream.getAudioTracks();
+          if (screenAudioTracks.length > 0) {
+            const screenAudioKey = `${senderId}_screen_audio`;
+            let audioEl = remoteAudioElementsRef.current.get(screenAudioKey);
+            if (!audioEl) {
+              audioEl = document.createElement('audio');
+              audioEl.autoplay = true;
+              (audioEl as any).playsInline = true;
+              audioEl.style.display = 'none';
+              document.body.appendChild(audioEl);
+              remoteAudioElementsRef.current.set(screenAudioKey, audioEl);
+            }
+            audioEl.srcObject = new MediaStream(screenAudioTracks);
+            audioEl.play().catch((err) => {
+              console.warn('Autoplay screen audio prevented:', err);
+            });
+          }
         } else {
           // Play remote voice audio via persistent DOM element with autoplay
           let audioEl = remoteAudioElementsRef.current.get(senderId);
@@ -139,7 +157,7 @@ export function App() {
             audioEl = document.createElement('audio');
             audioEl.autoplay = true;
             (audioEl as any).playsInline = true;
-            (audioEl as any).style = 'display: none;';
+            audioEl.style.display = 'none';
             document.body.appendChild(audioEl);
             remoteAudioElementsRef.current.set(senderId, audioEl);
           }
@@ -218,13 +236,32 @@ export function App() {
       onIncomingStream: (stream, senderId, isScreen) => {
         if (isScreen) {
           setScreenStream(stream);
+
+          // Auxiliary audio player to guarantee that screen audio tracks play reliably
+          const screenAudioTracks = stream.getAudioTracks();
+          if (screenAudioTracks.length > 0) {
+            const screenAudioKey = `${senderId}_screen_audio`;
+            let audioEl = remoteAudioElementsRef.current.get(screenAudioKey);
+            if (!audioEl) {
+              audioEl = document.createElement('audio');
+              audioEl.autoplay = true;
+              (audioEl as any).playsInline = true;
+              audioEl.style.display = 'none';
+              document.body.appendChild(audioEl);
+              remoteAudioElementsRef.current.set(screenAudioKey, audioEl);
+            }
+            audioEl.srcObject = new MediaStream(screenAudioTracks);
+            audioEl.play().catch((err) => {
+              console.warn('Autoplay screen audio prevented:', err);
+            });
+          }
         } else {
           let audioEl = remoteAudioElementsRef.current.get(senderId);
           if (!audioEl) {
             audioEl = document.createElement('audio');
             audioEl.autoplay = true;
             (audioEl as any).playsInline = true;
-            (audioEl as any).style = 'display: none;';
+            audioEl.style.display = 'none';
             document.body.appendChild(audioEl);
             remoteAudioElementsRef.current.set(senderId, audioEl);
           }
@@ -304,6 +341,34 @@ export function App() {
       setScreenStream(stream);
       setIsScreenSharing(true);
       roomManagerRef.current?.sendScreenStream(stream);
+
+      // Check if user enabled the audio checkbox in the browser capture dialog
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `sys-audio-warn-${Date.now()}`,
+            senderId: 'system',
+            senderName: 'Подсказка по звуку',
+            text: '⚠️ Трансляция запущена без системного звука. Чтобы передавать звук видео/игры, при выборе экрана в браузере обязательно выберите вкладку или включите галочку «Также транслировать звук вкладки / системы».',
+            timestamp: Date.now(),
+            isSystem: true,
+          },
+        ]);
+      } else {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `sys-audio-ok-${Date.now()}`,
+            senderId: 'system',
+            senderName: 'Система',
+            text: '🔊 Звук трансляции успешно захвачен и транслируется зрителям.',
+            timestamp: Date.now(),
+            isSystem: true,
+          },
+        ]);
+      }
     } catch (err: any) {
       alert(err.message || 'Ошибка захвата экрана');
     }

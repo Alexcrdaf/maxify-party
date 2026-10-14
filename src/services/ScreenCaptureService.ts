@@ -40,9 +40,30 @@ export class ScreenCaptureService {
               noiseSuppression: false,
             }
           : false,
+        // Chrome / Edge hints for capturing tab / system audio
+        systemAudio: 'include',
+        surfaceSwitching: 'include',
+        selfBrowserSurface: 'exclude',
       };
 
-      const stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+      } catch (firstErr: any) {
+        // Fallback for browsers that don't support advanced audio constraint objects in getDisplayMedia (e.g. Firefox)
+        if (options.withAudio) {
+          const fallbackOptions: any = {
+            video: {
+              frameRate: { ideal: targetFps, max: targetFps },
+            },
+            audio: true,
+          };
+          stream = await navigator.mediaDevices.getDisplayMedia(fallbackOptions);
+        } else {
+          throw firstErr;
+        }
+      }
+
       this.currentStream = stream;
 
       const videoTrack = stream.getVideoTracks()[0];

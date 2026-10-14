@@ -43,13 +43,23 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   useEffect(() => {
     if (videoRef.current && screenStream) {
       videoRef.current.srcObject = screenStream;
-      videoRef.current.muted = true; // Avoid feedback on host pc
-      videoRef.current.play().catch(() => {});
+      // Host should be muted locally to avoid hearing their own tab echo,
+      // but viewers MUST be unmuted so they can hear the screen/tab audio.
+      if (isHost && screenStream.getVideoTracks()[0]?.readyState === 'live') {
+        videoRef.current.muted = true;
+      } else {
+        videoRef.current.muted = isMuted;
+        videoRef.current.volume = volume;
+      }
+      videoRef.current.play().catch((err) => {
+        console.warn('Autoplay screen stream prevented:', err);
+      });
     } else if (videoRef.current && !screenStream) {
       videoRef.current.srcObject = null;
       videoRef.current.muted = isMuted;
+      videoRef.current.volume = volume;
     }
-  }, [screenStream, isMuted]);
+  }, [screenStream, isHost, isMuted, volume]);
 
   // Sync incoming state from RoomManager
   useEffect(() => {
