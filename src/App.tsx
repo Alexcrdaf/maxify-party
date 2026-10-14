@@ -425,8 +425,18 @@ export function App() {
                 isHost={isHost}
                 screenStream={screenStream}
                 onStopScreenShare={isScreenSharing ? handleStopScreenShare : undefined}
+                onRequestScreenStream={() => roomManagerRef.current?.requestScreenStream()}
                 externalNotice={externalNotice}
-              />
+              >
+                {/* Embedded Chat during Fullscreen view */}
+                <div className="h-80 flex flex-col">
+                  <ChatPanel
+                    messages={chatMessages}
+                    currentUserId={myId}
+                    onSendMessage={(text, file) => roomManagerRef.current?.sendChatMessage(text, file)}
+                  />
+                </div>
+              </VideoPlayer>
 
               <RoomControls
                 roomCode={roomCode}
@@ -460,7 +470,7 @@ export function App() {
                 <ChatPanel
                   messages={chatMessages}
                   currentUserId={myId}
-                  onSendMessage={(text) => roomManagerRef.current?.sendChatMessage(text)}
+                  onSendMessage={(text, file) => roomManagerRef.current?.sendChatMessage(text, file)}
                 />
               </div>
             </div>

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send } from 'lucide-react';
-import type { ChatMessage } from '../types';
+import { MessageSquare, Send, Paperclip, X, Download, FileText, Image as ImageIcon, ExternalLink } from 'lucide-react';
+import type { ChatMessage, ChatAttachment } from '../types';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
   currentUserId: string;
-  onSendMessage: (text: string) => void;
+  onSendMessage: (text: string, file?: ChatAttachment) => void;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -14,20 +14,72 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   onSendMessage,
 }) => {
   const [inputText, setInputText] = useState('');
+  const [pendingFile, setPendingFile] = useState<ChatAttachment | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert('Максимальный размер файла для P2P отправки — 15 МБ.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPendingFile({
+        name: file.name,
+        size: file.size,
+        type: file.type || 'application/octet-stream',
+        dataUrl: reader.result as string,
+      });
+    };
+    reader.readAsDataURL(file);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
-    onSendMessage(inputText.trim());
+    if (!inputText.trim() && !pendingFile) return;
+    onSendMessage(inputText.trim(), pendingFile || undefined);
     setInputText('');
+    setPendingFile(null);
   };
 
   const quickReactions = ['🔥', '😂', '🍿', '😮', '👏'];
+
+  const renderMessageContent = (text: string) => {
+    // Regex for URLs
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+
+    return parts.map((part, i) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sky-300 underline underline-offset-2 break-all hover:text-white inline-flex items-center gap-1"
+          >
+            <span>{part}</span>
+            <ExternalLink className="w-2.5 h-2.5 inline shrink-0" />
+          </a>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
 
   return (
     <div className="glass-panel p-4 flex flex-col h-full">
@@ -43,7 +95,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center text-slate-400 text-xs text-center p-4">
-            Здесь пока тихо. Напишите сообщение или отправьте реакцию!
+            Здесь пока тихо. Напишите сообщение, прикрепите файл или отправьте реакцию!
           </div>
         ) : (
           messages.map((msg) => {
@@ -66,13 +118,51 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                   {isMe ? 'Вы' : msg.senderName}
                 </span>
                 <div
-                  className={`px-3 py-2 rounded-2xl max-w-[85%] break-words shadow-sm ${
+                  className={`px-3 py-2 rounded-2xl max-w-[85%] break-words shadow-sm flex flex-col gap-2 ${
                     isMe
                       ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-tr-xs'
                       : 'bg-slate-800/80 text-slate-100 rounded-tl-xs border border-white/10'
                   }`}
                 >
-                  {msg.text}
+                  {msg.text && <div>{renderMessageContent(msg.text)}</div>}
+
+                  {/* Attached file/image */}
+                  {msg.file && (
+                    <div className="mt-1 p-2 rounded-xl bg-black/30 border border-white/10 flex flex-col gap-1.5">
+                      {msg.file.type.startsWith('image/') ? (
+                        <div className="rounded-lg overflow-hidden max-h-48">
+                          <img
+                            src={msg.file.dataUrl}
+                            alt={msg.file.name}
+                            className="w-full h-auto object-cover rounded-lg"
+                          />
+                        </div>
+                      ) : null}
+
+                      <div className="flex items-center justify-between gap-2 text-[11px]">
+                        <div className="flex items-center gap-1.5 truncate">
+                          {msg.file.type.startsWith('image/') ? (
+                            <ImageIcon className="w-3.5 h-3.5 text-sky-300 shrink-0" />
+                          ) : (
+                            <FileText className="w-3.5 h-3.5 text-sky-300 shrink-0" />
+                          )}
+                          <span className="truncate font-medium">{msg.file.name}</span>
+                          <span className="text-[9px] opacity-70 shrink-0">
+                            ({(msg.file.size / 1024).toFixed(0)} KB)
+                          </span>
+                        </div>
+
+                        <a
+                          href={msg.file.dataUrl}
+                          download={msg.file.name}
+                          className="p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors shrink-0"
+                          title="Скачать файл"
+                        >
+                          <Download className="w-3.5 h-3.5 text-white" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -80,6 +170,30 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Pending file preview */}
+      {pendingFile && (
+        <div className="p-2 mb-2 rounded-xl bg-slate-900/90 border border-sky-500/40 flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 truncate">
+            {pendingFile.type.startsWith('image/') ? (
+              <ImageIcon className="w-4 h-4 text-sky-400 shrink-0" />
+            ) : (
+              <FileText className="w-4 h-4 text-sky-400 shrink-0" />
+            )}
+            <span className="truncate text-slate-200">{pendingFile.name}</span>
+            <span className="text-[10px] text-slate-400 shrink-0">
+              ({(pendingFile.size / 1024).toFixed(0)} KB)
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPendingFile(null)}
+            className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-white/10"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Quick Reaction Bar */}
       <div className="flex items-center justify-between pt-2 border-t border-white/10 my-1 px-1">
@@ -98,19 +212,36 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         </div>
       </div>
 
-      {/* Input form */}
-      <form onSubmit={handleSubmit} className="mt-1 flex gap-2">
+      {/* Input form with file attach button */}
+      <form onSubmit={handleSubmit} className="mt-1 flex items-center gap-2">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 transition-colors shrink-0"
+          title="Прикрепить файл или фото"
+        >
+          <Paperclip className="w-4 h-4" />
+        </button>
+
         <input
           type="text"
-          maxLength={280}
+          maxLength={1000}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Написать в чат..."
+          placeholder="Написать в чат, отправить ссылку..."
           className="flex-1 px-3 py-2 text-xs"
         />
+
         <button
           type="submit"
-          disabled={!inputText.trim()}
+          disabled={!inputText.trim() && !pendingFile}
           className="btn btn-accent p-2 shrink-0 disabled:opacity-40"
           title="Отправить сообщение"
         >

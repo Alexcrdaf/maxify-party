@@ -209,18 +209,12 @@ export class RoomManager {
 
       // If host is currently screen sharing, immediately share the stream with this new peer
       if (this.isHost && this.activeLocalStream && this.peer) {
-        const call = this.peer.call(conn.peer, this.activeLocalStream, {
-          metadata: { isScreenShare: true },
-        });
-        this.handleIncomingMediaCall(call);
+        this.callPeerWithStream(conn.peer, this.activeLocalStream, true);
       }
 
       // If host has active voice, immediately connect voice with new peer
       if (this.activeVoiceStream && this.peer) {
-        const vCall = this.peer.call(conn.peer, this.activeVoiceStream, {
-          metadata: { isScreenShare: false },
-        });
-        this.handleIncomingMediaCall(vCall);
+        this.callPeerWithStream(conn.peer, this.activeVoiceStream, false);
       }
     });
 
@@ -241,6 +235,29 @@ export class RoomManager {
     });
   }
 
+  public callPeerWithStream(peerId: string, stream: MediaStream, isScreenShare: boolean) {
+    if (!this.peer || this.peer.destroyed) return;
+    const callKey = `${peerId}_${isScreenShare ? 'screen' : 'voice'}`;
+
+    if (this.mediaCalls.has(callKey)) {
+      try {
+        this.mediaCalls.get(callKey)?.close();
+      } catch (_) {}
+      this.mediaCalls.delete(callKey);
+    }
+
+    try {
+      const call = this.peer.call(peerId, stream, {
+        metadata: { isScreenShare },
+      });
+      if (call) {
+        this.handleIncomingMediaCall(call);
+      }
+    } catch (err) {
+      console.warn(`Error calling peer ${peerId} with ${isScreenShare ? 'screen' : 'voice'}:`, err);
+    }
+  }
+
   private handleIncomingMediaCall(call: MediaConnection) {
     const isScreen = call.metadata?.isScreenShare === true;
     const callKey = `${call.peer}_${isScreen ? 'screen' : 'voice'}`;
@@ -252,6 +269,10 @@ export class RoomManager {
 
     call.on('close', () => {
       this.mediaCalls.delete(callKey);
+    });
+
+    call.on('error', (err) => {
+      console.warn(`MediaConnection error on ${callKey}:`, err);
     });
   }
 
@@ -267,6 +288,26 @@ export class RoomManager {
           };
           this.callbacks.onParticipantJoined(participant);
 
+          // Send full room state back to the newly connected participant
+          conn.send({
+            type: 'room_state',
+            roomId: this.roomId,
+            senderId: this.myId,
+            payload: {
+              isScreenSharing: Boolean(this.activeLocalStream && this.isScreenSharing),
+              hostId: this.myId,
+              hostProfile: this.myProfile,
+            },
+            timestamp: Date.now(),
+          } as SignalingMessage);
+
+          // If host is screen sharing, call the new participant with a small delay to ensure peer is ready
+          if (this.activeLocalStream && this.isScreenSharing) {
+            setTimeout(() => {
+              this.callPeerWithStream(conn.peer, this.activeLocalStream!, true);
+            }, 300);
+          }
+
           // Broadcast to everyone else
           this.broadcast(
             {
@@ -278,6 +319,21 @@ export class RoomManager {
             },
             conn.peer
           );
+        }
+        break;
+      }
+
+      case 'room_state': {
+        if (msg.payload?.hostProfile) {
+          this.callbacks.onParticipantJoined(msg.payload.hostProfile);
+        }
+        break;
+      }
+
+      case 'request_screen_stream': {
+        // If participant asks for screen stream re-send (e.g. negotiation retry or reconnect)
+        if (this.isHost && this.activeLocalStream && this.isScreenSharing) {
+          this.callPeerWithStream(conn.peer, this.activeLocalStream, true);
         }
         break;
       }
@@ -366,13 +422,28 @@ export class RoomManager {
     }
   }
 
-  public sendChatMessage(text: string) {
+  public requestScreenStream() {
+    if (this.isHost) return;
+    const hostConn = this.connections.get(`syncwave-room-${this.roomId}`);
+    if (hostConn && hostConn.open) {
+      hostConn.send({
+        type: 'request_screen_stream',
+        roomId: this.roomId,
+        senderId: this.myId,
+        payload: null,
+        timestamp: Date.now(),
+      } as SignalingMessage);
+    }
+  }
+
+  public sendChatMessage(text: string, file?: import('../types').ChatAttachment) {
     const chatMsg: ChatMessage = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       senderId: this.myId,
       senderName: this.myProfile.name,
-      text: text.slice(0, 500),
+      text: text.slice(0, 1000),
       timestamp: Date.now(),
+      file,
     };
 
     const msg: SignalingMessage = {
@@ -399,18 +470,7 @@ export class RoomManager {
     this.activeVoiceStream = stream;
 
     this.connections.forEach((_conn, peerId) => {
-      if (this.peer) {
-        const callKey = `${peerId}_voice`;
-        // Close previous voice call if any
-        if (this.mediaCalls.has(callKey)) {
-          this.mediaCalls.get(callKey)?.close();
-        }
-
-        const call = this.peer.call(peerId, stream, {
-          metadata: { isScreenShare: false },
-        });
-        this.handleIncomingMediaCall(call);
-      }
+      this.callPeerWithStream(peerId, stream, false);
     });
   }
 
@@ -430,17 +490,7 @@ export class RoomManager {
     this.isScreenSharing = true;
 
     this.connections.forEach((_conn, peerId) => {
-      if (this.peer) {
-        const callKey = `${peerId}_screen`;
-        if (this.mediaCalls.has(callKey)) {
-          this.mediaCalls.get(callKey)?.close();
-        }
-
-        const call = this.peer.call(peerId, stream, {
-          metadata: { isScreenShare: true },
-        });
-        this.handleIncomingMediaCall(call);
-      }
+      this.callPeerWithStream(peerId, stream, true);
     });
   }
 

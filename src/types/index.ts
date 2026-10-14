@@ -22,6 +22,13 @@ export interface PlaybackState {
   sentBy: string;
 }
 
+export interface ChatAttachment {
+  name: string;
+  size: number;
+  type: string;
+  dataUrl: string; // base64 data url for images/files
+}
+
 export interface ChatMessage {
   id: string;
   senderId: string;
@@ -29,11 +36,18 @@ export interface ChatMessage {
   text: string;
   timestamp: number;
   isSystem?: boolean;
+  file?: ChatAttachment;
+}
+
+export interface UserProfile {
+  name: string;
+  avatarSeed: string;
 }
 
 export type SignalingMessageType =
   | 'join_request'
   | 'room_state'
+  | 'request_screen_stream'
   | 'playback_sync'
   | 'chat_message'
   | 'kick'

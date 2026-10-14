@@ -18,7 +18,9 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRoom }) => {
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState(() => {
+    return localStorage.getItem('maxify_user_name') || '';
+  });
   const [roomCode, setRoomCode] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -27,11 +29,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
   const handleRandomizeName = () => {
     const pick = randomNames[Math.floor(Math.random() * randomNames.length)];
     setUserName(pick);
+    localStorage.setItem('maxify_user_name', pick);
+  };
+
+  const handleNameChange = (val: string) => {
+    setUserName(val);
+    localStorage.setItem('maxify_user_name', val);
   };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = userName.trim() || 'Гость';
+    localStorage.setItem('maxify_user_name', cleanName);
     setErrorMsg('');
     onCreateRoom(cleanName);
   };
@@ -39,6 +48,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = userName.trim() || 'Гость';
+    localStorage.setItem('maxify_user_name', cleanName);
     if (!isValidRoomCode(roomCode)) {
       setErrorMsg('Введите корректный 6-значный код комнаты (латинские буквы и цифры).');
       return;
@@ -129,7 +139,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
                     type="text"
                     maxLength={24}
                     value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
+                    onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="Например: Алекс"
                     className="w-full px-3.5 py-2.5 text-sm"
                   />

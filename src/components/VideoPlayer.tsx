@@ -9,6 +9,7 @@ import {
   Film,
   RotateCcw,
   RotateCw,
+  RefreshCw,
 } from 'lucide-react';
 import type { PlaybackState } from '../types';
 import { APP_CONFIG } from '../config';
@@ -19,7 +20,9 @@ interface VideoPlayerProps {
   isHost: boolean;
   screenStream: MediaStream | null;
   onStopScreenShare?: () => void;
+  onRequestScreenStream?: () => void;
   externalNotice?: { title: string; description: string } | null;
+  children?: React.ReactNode;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -27,7 +30,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onUpdateState,
   isHost,
   screenStream,
+  onRequestScreenStream,
   externalNotice,
+  children,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -295,6 +300,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
             {/* Right side buttons */}
             <div className="flex items-center gap-2">
+              {onRequestScreenStream && !isHost && (
+                <button
+                  onClick={onRequestScreenStream}
+                  className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-sky-300 hover:text-white border border-sky-500/30 text-xs flex items-center gap-1.5 transition-colors"
+                  title="Переподключить поток демонстрации"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Обновить видеопоток</span>
+                </button>
+              )}
+
               <button
                 onClick={toggleFullscreen}
                 className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10"
@@ -304,6 +320,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating overlay (e.g. chat in fullscreen mode) */}
+      {isFullscreen && children && (
+        <div className="absolute top-4 right-4 z-40 w-80 max-h-[85%] flex flex-col pointer-events-auto shadow-2xl rounded-2xl overflow-hidden border border-white/20 bg-slate-950/80 backdrop-blur-md">
+          {children}
         </div>
       )}
     </div>
