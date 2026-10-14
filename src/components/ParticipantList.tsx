@@ -18,12 +18,15 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
   onKickParticipant,
 }) => {
   return (
-    <div className="glass-panel rounded-2xl p-4 flex flex-col h-full border border-white/5">
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
-        <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-          <Users className="w-4 h-4 text-purple-400" />
-          Участники ({participants.length})
+    <div className="glass-panel p-4 flex flex-col h-full">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+        <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2 syne">
+          <Users className="w-4 h-4 text-sky-400" />
+          <span>Участники</span>
         </h3>
+        <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-white/10 text-sky-300">
+          {participants.length}
+        </span>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
@@ -32,16 +35,16 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
           return (
             <div
               key={p.id}
-              className={`flex items-center justify-between p-2.5 rounded-xl border transition ${
+              className={`flex items-center justify-between p-2.5 rounded-2xl border transition ${
                 isMe
-                  ? 'bg-purple-950/20 border-purple-500/30'
-                  : 'bg-slate-900/40 border-white/5 hover:border-white/10'
+                  ? 'bg-sky-950/30 border-sky-500/40'
+                  : 'bg-slate-900/60 border-white/5 hover:border-white/15'
               }`}
             >
               <div className="flex items-center gap-2.5 overflow-hidden">
                 <div
-                  className={`relative w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center text-xs font-bold text-white shrink-0 ${
-                    p.isSpeaking ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900 animate-pulse' : ''
+                  className={`relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm ${
+                    p.isSpeaking ? 'speaking-ring ring-2 ring-emerald-400' : ''
                   }`}
                 >
                   {p.name.charAt(0).toUpperCase()}
@@ -49,15 +52,15 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
 
                 <div className="truncate">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-slate-200 truncate">
+                    <span className="text-xs font-semibold text-slate-200 truncate">
                       {p.name}
                     </span>
-                    {isMe && <span className="text-[10px] text-slate-400">(Вы)</span>}
+                    {isMe && <span className="text-[10px] text-sky-400 font-medium">(Вы)</span>}
                   </div>
                   <div className="flex items-center gap-1 mt-0.5">
                     {p.role === 'host' ? (
-                      <span className="text-[10px] text-amber-300 font-medium flex items-center gap-0.5">
-                        <Shield className="w-2.5 h-2.5" /> Ведущий
+                      <span className="text-[10px] text-amber-300 font-medium flex items-center gap-1">
+                        <Shield className="w-2.5 h-2.5 text-amber-300" /> Ведущий
                       </span>
                     ) : (
                       <span className="text-[10px] text-slate-400">Зритель</span>
@@ -67,7 +70,7 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span title={p.isAudioMuted ? 'Микрофон выключен' : 'Микрофон активен'}>
+                <span title={p.isAudioMuted ? 'Микрофон отключён' : 'Голос активен'}>
                   {p.isAudioMuted ? (
                     <MicOff className="w-3.5 h-3.5 text-slate-500" />
                   ) : (

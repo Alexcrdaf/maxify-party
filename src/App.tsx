@@ -308,11 +308,13 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0b10] text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-500 selection:text-white">
       <Navbar
         onGoHome={handleLeaveRoom}
         roomCode={inRoom ? roomCode : undefined}
         isHost={isHost}
+        participantCount={participants.length}
+        connectionStatus={connectionStatus}
       />
 
       {!inRoom ? (

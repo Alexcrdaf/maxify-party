@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import {
-  Monitor,
-  Zap,
-  ArrowRight,
+  Film,
+  ScreenShare,
   Sparkles,
-  Volume2,
+  ArrowRight,
+  PlusCircle,
+  Dice5,
+  ShieldCheck,
+  Zap,
+  Globe,
 } from 'lucide-react';
 import { isValidRoomCode } from '../config';
 
@@ -18,145 +22,196 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
   const [roomCode, setRoomCode] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const randomNames = ['Алекс', 'Макс', 'София', 'Даниил', 'Ева', 'Кирилл', 'Алина', 'Артём'];
+
+  const handleRandomizeName = () => {
+    const pick = randomNames[Math.floor(Math.random() * randomNames.length)];
+    setUserName(pick);
+  };
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userName.trim()) {
-      setErrorMsg('Пожалуйста, введите ваше имя.');
-      return;
-    }
+    const cleanName = userName.trim() || 'Гость';
     setErrorMsg('');
-    onCreateRoom(userName.trim());
+    onCreateRoom(cleanName);
   };
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userName.trim()) {
-      setErrorMsg('Пожалуйста, введите ваше имя.');
-      return;
-    }
+    const cleanName = userName.trim() || 'Гость';
     if (!isValidRoomCode(roomCode)) {
-      setErrorMsg('Некорректный код комнаты. Введите правильный 4–10 символьный код.');
+      setErrorMsg('Введите корректный 6-значный код комнаты (латинские буквы и цифры).');
       return;
     }
     setErrorMsg('');
-    onJoinRoom(roomCode.trim().toUpperCase(), userName.trim());
+    onJoinRoom(roomCode.trim().toUpperCase(), cleanName);
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-between py-12 px-6 max-w-6xl mx-auto">
-      {/* Hero Section */}
-      <div className="flex flex-col items-center text-center my-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold mb-6">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Синхронный просмотр нового поколения</span>
-        </div>
-
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4 max-w-3xl leading-tight">
-          Один экран.{' '}
-          <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-blue-400 bg-clip-text text-transparent">
-            Одна компания.
-          </span>
-        </h1>
-
-        <p className="text-base sm:text-lg text-slate-400 max-w-xl mb-10 leading-relaxed">
-          Смотрите любимые видео, сериалы и фильмы вместе с друзьями прямо в браузере с идеальной синхронизацией и встроенной голосовой связью.
-        </p>
-
-        {/* Input & Action Card */}
-        <div className="glass-panel p-6 sm:p-8 rounded-3xl max-w-md w-full border border-white/10 shadow-2xl relative">
-          <div className="mb-5 text-left">
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Ваше имя</label>
-            <input
-              type="text"
-              required
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder="Например: Алекс"
-              maxLength={20}
-              className="w-full bg-slate-900/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500/60"
-            />
+    <div className="flex-1 flex flex-col justify-between max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      {/* Hero Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center my-auto">
+        {/* Left Column: Brand & Value proposition */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/25 text-sky-300 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+            <span>GitHub Pages Ready • Прямой WebRTC P2P без пережатия</span>
           </div>
 
-          {errorMsg && (
-            <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl mb-4 text-left">
-              {errorMsg}
-            </div>
-          )}
-
-          {/* Create Button */}
-          <button
-            onClick={handleCreate}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-sm transition shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 mb-4 group"
-          >
-            <span>Создать новую комнату</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
-
-          <div className="relative my-5 flex items-center justify-center">
-            <div className="border-t border-white/10 w-full" />
-            <span className="bg-slate-900/90 px-3 text-[11px] text-slate-500 uppercase tracking-wider absolute">
-              или подключиться по коду
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.1] syne">
+            Один экран.<br />
+            <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+              Одна компания.
             </span>
-          </div>
+          </h1>
 
-          {/* Join form */}
-          <form onSubmit={handleJoin} className="flex gap-2">
-            <input
-              type="text"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              placeholder="КОД (K7MX42)"
-              maxLength={10}
-              className="flex-1 bg-slate-900/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-mono tracking-wider text-slate-100 placeholder-slate-500 uppercase focus:outline-none focus:border-purple-500/60"
-            />
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs transition border border-white/5"
-            >
-              Войти
-            </button>
-          </form>
+          <p className="text-slate-300 text-base sm:text-lg max-w-2xl leading-relaxed">
+            Смотрите фильмы, сериалы и трансляции вкладок браузера синхронно с друзьями. 
+            Никаких промежуточных медиа-серверов: управление воспроизведением, чистый системный звук и видеопоток 
+            передаются напрямую между участниками.
+          </p>
+
+          {/* Feature Cards in Maxify Glass */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+            <div className="glass-panel-subtle p-4 border border-white/5 hover:border-sky-500/30 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 mb-3">
+                <Film className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-white syne">HTML5 Sync</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Точная синхронизация MP4/WebM с компенсацией сетевого пинга и защитой от цикла событий.
+              </p>
+            </div>
+
+            <div className="glass-panel-subtle p-4 border border-white/5 hover:border-indigo-500/30 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-3">
+                <ScreenShare className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-white syne">Захват вкладки</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Нативный getDisplayMedia с передачей системного звука вкладки через защищённый WebRTC.
+              </p>
+            </div>
+
+            <div className="glass-panel-subtle p-4 border border-white/5 hover:border-purple-500/30 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-3">
+                <Globe className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-white syne">Внешние сайты</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                YouTube IFrame API и честная диагностика аппаратных ограничений DRM (Widevine / HDCP).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Maxify Session Card */}
+        <div className="lg:col-span-5">
+          <div className="glass-panel p-6 sm:p-8 relative overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white syne">Вход в сессию</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Настройте профиль и выберите действие</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-lg font-bold text-white shadow-md border border-white/20">
+                {(userName.trim() || 'М').charAt(0).toUpperCase()}
+              </div>
+            </div>
+
+            {/* Name Input */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Ваше имя в комнате
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    maxLength={24}
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Например: Алекс"
+                    className="w-full px-3.5 py-2.5 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRandomizeName}
+                    title="Выбрать случайное имя"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                  >
+                    <Dice5 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Create Room Button */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  className="w-full btn btn-primary py-3.5 text-sm"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Создать комнату</span>
+                </button>
+              </div>
+
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-white/10"></div>
+                <span className="flex-shrink mx-3 text-[11px] uppercase tracking-wider text-slate-400 font-mono">
+                  или по коду друга
+                </span>
+                <div className="flex-grow border-t border-white/10"></div>
+              </div>
+
+              {/* Join Room Form */}
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Ввести код комнаты (6 символов)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                    placeholder="K7MX42"
+                    className="w-full font-mono text-center uppercase tracking-widest text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleJoin}
+                    className="btn btn-accent px-5 py-2.5 shrink-0"
+                  >
+                    <span>Войти</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+                {errorMsg && (
+                  <p className="text-xs text-rose-400 mt-2 font-medium">{errorMsg}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Test hint */}
+            <div className="mt-6 pt-4 border-t border-white/10 flex items-start gap-2.5 text-xs text-slate-400">
+              <Zap className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+              <span>
+                Протестируйте синхронизацию прямо сейчас: создайте комнату и откройте вторую вкладку браузера с этим же кодом.
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Feature Highlights Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-16">
-        <div className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col items-start text-left">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4">
-            <Zap className="w-5 h-5" />
-          </div>
-          <h3 className="text-base font-semibold text-white mb-2">Мгновенная P2P-синхронизация</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Воспроизведение, пауза и перемотка управляются ведущим в реальном времени через WebRTC DataChannel с миллисекундной задержкой.
-          </p>
+      {/* Footer architecture block */}
+      <footer className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>Maxify: P2P DataChannel • STUN & TURN • Opus Voice</span>
         </div>
-
-        <div className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col items-start text-left">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
-            <Monitor className="w-5 h-5" />
-          </div>
-          <h3 className="text-base font-semibold text-white mb-2">Трансляция вкладки со звуком</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Полноценный захват системного экрана или отдельной вкладки браузера с прямой передачей оригинального аудиопотока.
-          </p>
-        </div>
-
-        <div className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col items-start text-left">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
-            <Volume2 className="w-5 h-5" />
-          </div>
-          <h3 className="text-base font-semibold text-white mb-2">Встроенный голосовой чат</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Общайтесь голосом прямо во время просмотра. Раздельные каналы для системного звука фильма и микрофонов участников.
-          </p>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-        <div>© 2026 SyncWave. Open-source Watch Party Platform.</div>
-        <div className="flex items-center gap-6">
-          <span>Работает без backend на GitHub Pages</span>
+        <div>
+          <span>Готово к хостингу на GitHub Pages</span>
         </div>
       </footer>
     </div>
