@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { Navbar } from './components/Navbar';
-import { LandingPage } from './components/LandingPage';
-import { VideoPlayer } from './components/VideoPlayer';
-import { ParticipantList } from './components/ParticipantList';
-import { ChatPanel } from './components/ChatPanel';
-import { RoomControls } from './components/RoomControls';
-import { RoomManager } from './services/RoomManager';
-import { ScreenCaptureService } from './services/ScreenCaptureService';
-import { VoiceChatService } from './services/VoiceChatService';
+import {
+  Navbar,
+  LandingPage,
+  VideoPlayer,
+  ParticipantList,
+  ChatPanel,
+  RoomControls,
+} from './components';
+import {
+  RoomManager,
+  ScreenCaptureService,
+  VoiceChatService,
+} from './services';
 import { generateRoomCode } from './config';
 import { analyzeMediaUrl } from './utils/mediaDetector';
 import type { Participant, PlaybackState, ChatMessage } from './types';
