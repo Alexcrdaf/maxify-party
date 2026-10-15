@@ -125,19 +125,19 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
           onClick={toggleMic}
           className={`btn text-xs ${
             isMicActive
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+              ? 'bg-emerald-500/25 text-emerald-200 border-emerald-400/50 shadow-lg shadow-emerald-500/20'
               : 'btn-ghost'
           }`}
           title={isMicActive ? 'Выключить микрофон' : 'Включить голосовой чат'}
         >
           {isMicActive ? (
             <>
-              <Mic className="w-4 h-4 text-emerald-400 animate-pulse" />
+              <Mic className="w-4 h-4 text-emerald-300 animate-pulse" />
               <span>Голос активен</span>
             </>
           ) : (
             <>
-              <MicOff className="w-4 h-4 text-slate-400" />
+              <MicOff className="w-4 h-4 text-slate-300" />
               <span>Микрофон</span>
             </>
           )}

@@ -118,10 +118,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                   {isMe ? 'Вы' : msg.senderName}
                 </span>
                 <div
-                  className={`px-3 py-2 rounded-2xl max-w-[85%] break-words shadow-sm flex flex-col gap-2 ${
+                  className={`px-4 py-2.5 rounded-2xl max-w-[85%] break-words text-sm ${
                     isMe
-                      ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-tr-xs'
-                      : 'bg-slate-800/80 text-slate-100 rounded-tl-xs border border-white/10'
+                      ? 'bubble-mine'
+                      : 'bubble-their'
                   }`}
                 >
                   {msg.text && <div>{renderMessageContent(msg.text)}</div>}

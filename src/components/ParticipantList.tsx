@@ -35,10 +35,10 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
           return (
             <div
               key={p.id}
-              className={`flex items-center justify-between p-2.5 rounded-2xl border transition ${
+              className={`flex items-center justify-between p-3 rounded-2xl border transition ${
                 isMe
-                  ? 'bg-sky-950/30 border-sky-500/40'
-                  : 'bg-slate-900/60 border-white/5 hover:border-white/15'
+                  ? 'bg-sky-500/20 border-sky-400/40 shadow-sm'
+                  : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10'
               }`}
             >
               <div className="flex items-center gap-2.5 overflow-hidden">
