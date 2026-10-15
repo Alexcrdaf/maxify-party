@@ -19,17 +19,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="w-full h-18 border-b border-white/10 glass-panel sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8 transition-colors">
       {/* Brand logo & identity */}
-      <div
+      <button
+        type="button"
         onClick={onGoHome}
-        className="flex items-center gap-3.5 cursor-pointer group transition-transform active:scale-95"
+        aria-label="Maxify — на главную страницу"
+        className="flex items-center gap-3.5 cursor-pointer group transition-transform active:scale-95 text-left bg-transparent border-0 p-0"
       >
         <div className="relative w-11 h-11 rounded-2xl overflow-hidden p-0.5 border border-white/20 shadow-lg shadow-sky-500/20 group-hover:scale-105 transition-all">
           <img
             src="./icon-192.png"
-            alt="Maxify Icon"
+            alt=""
+            aria-hidden="true"
+            width="44"
+            height="44"
+            fetchPriority="high"
             className="w-full h-full object-cover rounded-xl"
             onError={(e) => {
-              // Fallback to icon.png if needed
               (e.target as HTMLImageElement).src = './icon.png';
             }}
           />
@@ -45,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <p className="text-[11px] text-slate-400 hidden sm:block -mt-0.5">Один экран. Одна компания.</p>
         </div>
-      </div>
+      </button>
 
       {/* Room metadata when inside an active party */}
       {roomCode && (

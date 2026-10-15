@@ -131,17 +131,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
             {/* Name Input */}
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                <label htmlFor="user-name-input" className="block text-xs font-medium text-slate-300 mb-1.5">
                   Ваше имя в комнате
                 </label>
                 <div className="relative">
                   <input
+                    id="user-name-input"
                     type="text"
                     maxLength={24}
                     value={userName}
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="Например: Алекс"
                     className="w-full px-3.5 py-2.5 text-sm"
+                    autoComplete="nickname"
                   />
                   <button
                     type="button"
@@ -175,22 +177,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
               </div>
 
               {/* Join Room Form */}
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  Ввести код комнаты (6 символов)
+              <form onSubmit={handleJoin}>
+                <label htmlFor="room-code-input" className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Код комнаты друга
                 </label>
                 <div className="flex gap-2">
                   <input
+                    id="room-code-input"
                     type="text"
                     maxLength={6}
                     value={roomCode}
                     onChange={(e) => setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                    placeholder="K7MX42"
+                    placeholder="Например: K7MX42"
                     className="w-full font-mono text-center uppercase tracking-widest text-sm"
+                    autoComplete="off"
                   />
                   <button
-                    type="button"
-                    onClick={handleJoin}
+                    type="submit"
                     className="btn btn-accent px-5 py-2.5 shrink-0"
                   >
                     <span>Войти</span>
@@ -198,16 +201,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
                   </button>
                 </div>
                 {errorMsg && (
-                  <p className="text-xs text-rose-400 mt-2 font-medium">{errorMsg}</p>
+                  <p className="text-xs text-rose-400 mt-2 font-medium" role="alert">{errorMsg}</p>
                 )}
-              </div>
+              </form>
             </div>
 
             {/* Test hint */}
-            <div className="mt-6 pt-4 border-t border-white/10 flex items-start gap-2.5 text-xs text-slate-400">
+            <div className="mt-6 pt-4 border-t border-white/10 flex items-start gap-2.5 text-xs text-slate-300">
               <Zap className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
               <span>
-                Протестируйте синхронизацию прямо сейчас: создайте комнату и откройте вторую вкладку браузера с этим же кодом.
+                Быстрый тест: создайте комнату и откройте ту же ссылку во второй вкладке браузера или на телефоне.
               </span>
             </div>
           </div>

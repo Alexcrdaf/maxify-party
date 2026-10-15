@@ -406,6 +406,10 @@ export function App() {
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col font-sans relative selection:bg-sky-500 selection:text-white">
+      <a href="#main-content" className="skip-link">
+        Перейти к основному содержимому
+      </a>
+
       <Navbar
         onGoHome={handleLeaveRoom}
         roomCode={inRoom ? roomCode : undefined}
@@ -415,12 +419,14 @@ export function App() {
       />
 
       {!inRoom ? (
-        <LandingPage
-          onCreateRoom={handleCreateRoom}
-          onJoinRoom={handleJoinRoom}
-        />
+        <main id="main-content" className="flex-1 flex flex-col">
+          <LandingPage
+            onCreateRoom={handleCreateRoom}
+            onJoinRoom={handleJoinRoom}
+          />
+        </main>
       ) : (
-        <main className="flex-1 p-4 lg:p-6 max-w-[1600px] w-full mx-auto flex flex-col gap-4">
+        <main id="main-content" className="flex-1 p-4 lg:p-6 max-w-[1600px] w-full mx-auto flex flex-col gap-4">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-1">
             <div className="lg:col-span-3 flex flex-col gap-4">
               <VideoPlayer
