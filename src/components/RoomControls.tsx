@@ -23,6 +23,7 @@ interface RoomControlsProps {
   voiceService: VoiceChatService;
   screenService: ScreenCaptureService;
   onVoiceStreamReady: (stream: MediaStream) => void;
+  onStopVoiceStream?: () => void;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
 }
 
@@ -36,6 +37,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   onLeaveRoom,
   voiceService,
   onVoiceStreamReady,
+  onStopVoiceStream,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isMicActive, setIsMicActive] = useState(false);
@@ -56,13 +58,23 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleLeave = () => {
+    if (onStopVoiceStream) {
+      onStopVoiceStream();
+    }
+    voiceService.stop();
+    onLeaveRoom();
+  };
+
   const toggleMic = async () => {
     if (isMicActive) {
-      voiceService.stop();
+      // Mute track instead of hard-killing the stream to avoid WebRTC renegotiation breakdown
+      voiceService.mute(true);
       setIsMicActive(false);
     } else {
       try {
         const stream = await voiceService.startMicrophone();
+        voiceService.mute(false);
         setIsMicActive(true);
         onVoiceStreamReady(stream);
       } catch (err: any) {
@@ -70,6 +82,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
       }
     }
   };
+
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,7 +160,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
       {/* Right controls: Leave Room */}
       <div>
         <button
-          onClick={onLeaveRoom}
+          onClick={handleLeave}
           className="btn btn-danger text-xs"
           title="Покинуть сессию"
         >

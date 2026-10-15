@@ -16,6 +16,18 @@ export class VoiceChatService {
     deviceId?: string,
     onSpeakingChange?: (isSpeaking: boolean) => void
   ): Promise<MediaStream> {
+    // If stream already exists and tracks are live, simply unmute
+    if (this.localStream && this.localStream.getAudioTracks().some((t) => t.readyState === 'live')) {
+      this.mute(false);
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+      return this.localStream;
+    }
+
+    // Clean up any stale context before acquiring fresh stream
+    this.stop();
+
     try {
       const constraints: MediaStreamConstraints = {
         audio: {
@@ -34,6 +46,9 @@ export class VoiceChatService {
       if (typeof window !== 'undefined' && (window.AudioContext || (window as any).webkitAudioContext)) {
         const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
         this.audioContext = new AudioCtx();
+        if (this.audioContext.state === 'suspended') {
+          await this.audioContext.resume();
+        }
         const source = this.audioContext.createMediaStreamSource(stream);
         this.analyser = this.audioContext.createAnalyser();
         this.analyser.fftSize = 256;
@@ -78,6 +93,22 @@ export class VoiceChatService {
         track.enabled = !isMuted;
       });
     }
+    if (this.audioContext) {
+      if (isMuted && this.audioContext.state === 'running') {
+        this.audioContext.suspend().catch(() => {});
+      } else if (!isMuted && this.audioContext.state === 'suspended') {
+        this.audioContext.resume().catch(() => {});
+      }
+    }
+  }
+
+  public isMuted(): boolean {
+    if (!this.localStream) return true;
+    return this.localStream.getAudioTracks().every((track) => !track.enabled);
+  }
+
+  public hasActiveStream(): boolean {
+    return Boolean(this.localStream && this.localStream.getAudioTracks().some((t) => t.readyState === 'live'));
   }
 
   public stop() {
@@ -86,7 +117,7 @@ export class VoiceChatService {
       this.animFrameId = null;
     }
     if (this.audioContext && this.audioContext.state !== 'closed') {
-      this.audioContext.close();
+      this.audioContext.close().catch(() => {});
       this.audioContext = null;
     }
     if (this.localStream) {
@@ -95,3 +126,4 @@ export class VoiceChatService {
     }
   }
 }
+

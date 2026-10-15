@@ -461,6 +461,9 @@ export function App() {
                 onVoiceStreamReady={(stream) => {
                   roomManagerRef.current?.sendVoiceStream(stream);
                 }}
+                onStopVoiceStream={() => {
+                  roomManagerRef.current?.stopVoiceStream();
+                }}
                 connectionStatus={connectionStatus}
               />
             </div>

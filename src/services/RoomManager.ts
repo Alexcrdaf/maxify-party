@@ -206,16 +206,9 @@ export class RoomManager {
 
     conn.on('open', () => {
       this.connections.set(conn.peer, conn);
-
-      // If host is currently screen sharing, immediately share the stream with this new peer
-      if (this.isHost && this.activeLocalStream && this.peer) {
-        this.callPeerWithStream(conn.peer, this.activeLocalStream, true);
-      }
-
-      // If host has active voice, immediately connect voice with new peer
-      if (this.activeVoiceStream && this.peer) {
-        this.callPeerWithStream(conn.peer, this.activeVoiceStream, false);
-      }
+      // Note: We deliberately do NOT immediately callPeerWithStream here.
+      // The join_request / room_state handshake ensures the participant's profile is fully registered
+      // and their WebRTC peer is ready to answer incoming media streams.
     });
 
     conn.on('data', (data) => {
@@ -239,9 +232,15 @@ export class RoomManager {
     if (!this.peer || this.peer.destroyed) return;
     const callKey = `${peerId}_${isScreenShare ? 'screen' : 'voice'}`;
 
-    if (this.mediaCalls.has(callKey)) {
+    // If an active media connection for this type already exists and is open/calling, reuse it
+    const existingCall = this.mediaCalls.get(callKey);
+    if (existingCall && (existingCall as any).open) {
+      return;
+    }
+
+    if (existingCall) {
       try {
-        this.mediaCalls.get(callKey)?.close();
+        existingCall.close();
       } catch (_) {}
       this.mediaCalls.delete(callKey);
     }
@@ -306,6 +305,13 @@ export class RoomManager {
             setTimeout(() => {
               this.callPeerWithStream(conn.peer, this.activeLocalStream!, true);
             }, 300);
+          }
+
+          // If host has active voice, connect voice stream to the new participant as well
+          if (this.activeVoiceStream) {
+            setTimeout(() => {
+              this.callPeerWithStream(conn.peer, this.activeVoiceStream!, false);
+            }, 500);
           }
 
           // Broadcast to everyone else
