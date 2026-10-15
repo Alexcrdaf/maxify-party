@@ -41,10 +41,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold tracking-tight syne bg-gradient-to-r from-white via-sky-100 to-sky-400 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold tracking-tight syne bg-gradient-to-r from-white via-purple-100 to-fuchsia-400 bg-clip-text text-transparent">
               Maxify
             </span>
-            <span className="text-[10px] font-semibold text-sky-300 px-2.5 py-0.5 rounded-full bg-sky-500/15 border border-sky-400/30">
+            <span className="text-[10px] font-semibold text-purple-300 px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/35">
               P2P Sync
             </span>
           </div>

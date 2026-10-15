@@ -63,14 +63,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center my-auto">
         {/* Left Column: Brand & Value proposition */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/25 text-sky-300 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-200 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-purple-300" />
             <span>GitHub Pages Ready • Прямой WebRTC P2P без пережатия</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.1] syne">
             Один экран.<br />
-            <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-purple-300 via-fuchsia-300 to-indigo-300 bg-clip-text text-transparent">
               Одна компания.
             </span>
           </h1>
@@ -123,7 +123,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRo
                 <h2 className="text-xl font-bold text-white syne">Вход в сессию</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Настройте профиль и выберите действие</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-lg font-bold text-white shadow-md border border-white/20">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-lg font-bold text-white shadow-md border border-white/20">
                 {(userName.trim() || 'М').charAt(0).toUpperCase()}
               </div>
             </div>

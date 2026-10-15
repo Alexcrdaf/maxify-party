@@ -2,46 +2,53 @@
 
 @layer base {
   :root {
-    --bg-base: #071a2e;
-    --panel: rgba(15, 37, 61, 0.45);
-    --panel-solid: #0a223c;
-    --accent: #0A84FF;
-    --accent-grad: linear-gradient(135deg, #32C5FF 0%, #0A84FF 100%);
-    --glow: rgba(10, 132, 255, 0.3);
+    --bg-base: #10051c;
+    --panel: rgba(24, 10, 40, 0.55);
+    --panel-solid: #180a28;
+    --accent: #BF5AF2;
+    --accent-grad: linear-gradient(135deg, #DA8FFF 0%, #BF5AF2 100%);
+    --glow: rgba(191, 90, 242, 0.35);
     --text: #ffffff;
     --text-primary: rgba(255, 255, 255, 0.95);
-    --muted: rgba(200, 220, 245, 0.65);
+    --muted: rgba(220, 200, 255, 0.65);
     --danger: #FF453A;
     --danger-grad: linear-gradient(135deg, #FF6961 0%, #FF453A 100%);
     --ok: #32D74B;
     --panel-radius: 28px;
-    --border: rgba(10, 132, 255, 0.25);
-    --border-light: rgba(10, 132, 255, 0.4);
+    --border: rgba(191, 90, 242, 0.22);
+    --border-light: rgba(191, 90, 242, 0.38);
     --border-inset: inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
-    --shadow-glass: 0 16px 40px rgba(0, 20, 40, 0.35);
+    --shadow-glass: 0 16px 40px rgba(10, 2, 20, 0.45);
     --glass-blur: blur(40px) saturate(250%);
-    --glass-shine: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 45%);
-    --mesh-1: rgba(10, 132, 255, 0.45);
-    --mesh-2: rgba(142, 68, 255, 0.4);
-    --mesh-3: rgba(0, 210, 255, 0.3);
-    --input-bg: rgba(255, 255, 255, 0.08);
+    --glass-shine: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 45%);
+    --mesh-1: rgba(191, 90, 242, 0.35);
+    --mesh-2: rgba(94, 92, 230, 0.3);
+    --mesh-3: rgba(255, 105, 180, 0.2);
+    --input-bg: rgba(255, 255, 255, 0.06);
     --bubble-mine: var(--accent-grad);
-    --bubble-mine-shadow: 0 4px 14px rgba(10, 132, 255, 0.35);
-    --bubble-their: rgba(14, 42, 71, 0.6);
+    --bubble-mine-shadow: 0 4px 14px rgba(191, 90, 242, 0.35);
+    --bubble-their: rgba(34, 14, 56, 0.65);
     --bubble-their-border: rgba(255, 255, 255, 0.12);
   }
 
   body.glass-enabled {
     --glass-blur: blur(40px) saturate(250%) !important;
-    --panel: rgba(15, 37, 61, 0.45) !important;
-    --border: rgba(10, 132, 255, 0.25) !important;
-    --border-light: rgba(10, 132, 255, 0.4) !important;
+    --panel: rgba(24, 10, 40, 0.55) !important;
+    --border: rgba(191, 90, 242, 0.25) !important;
+    --border-light: rgba(191, 90, 242, 0.4) !important;
     --border-inset: inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(0, 0, 0, 0.3) !important;
-    --shadow-glass: 0 16px 40px rgba(0, 20, 40, 0.35) !important;
-    --glass-shine: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 45%) !important;
-    --mesh-1: rgba(10, 132, 255, 0.5) !important;
-    --mesh-2: rgba(191, 90, 242, 0.45) !important;
-    --mesh-3: rgba(0, 229, 255, 0.35) !important;
+    --shadow-glass: 0 16px 40px rgba(10, 2, 20, 0.45) !important;
+    --glass-shine: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 45%) !important;
+    --mesh-1: rgba(191, 90, 242, 0.35) !important;
+    --mesh-2: rgba(94, 92, 230, 0.3) !important;
+    --mesh-3: rgba(255, 105, 180, 0.2) !important;
+  }
+
+  body.glass-enabled.purple {
+    --bg-base: #10051c !important;
+    --mesh-1: rgba(191, 90, 242, 0.35) !important;
+    --mesh-2: rgba(94, 92, 230, 0.3) !important;
+    --mesh-3: rgba(255, 105, 180, 0.2) !important;
   }
 
   body {
@@ -78,9 +85,9 @@ body::after {
     radial-gradient(circle at 20% 30%, var(--mesh-1) 0%, transparent 50%),
     radial-gradient(circle at 80% 70%, var(--mesh-2) 0%, transparent 50%),
     radial-gradient(circle at 50% 50%, var(--mesh-3) 0%, transparent 60%);
-  filter: blur(55px);
-  animation: liquidBg 22s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0.95;
+  filter: blur(65px);
+  animation: liquidBg 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.75;
   pointer-events: none;
   will-change: transform;
 }
@@ -89,7 +96,7 @@ body::after {
   background:
     radial-gradient(circle at 80% 20%, var(--mesh-1) 0%, transparent 40%),
     radial-gradient(circle at 20% 80%, var(--mesh-3) 0%, transparent 50%);
-  animation: liquidBg 18s infinite alternate-reverse cubic-bezier(0.4, 0, 0.2, 1);
+  animation: liquidBg 20s infinite alternate-reverse cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes liquidBg {
