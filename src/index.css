@@ -45,19 +45,16 @@
   }
 
   body.glass-enabled.purple {
-    --bg-base: #10051c !important;
-    --mesh-1: rgba(191, 90, 242, 0.35) !important;
-    --mesh-2: rgba(94, 92, 230, 0.3) !important;
-    --mesh-3: rgba(255, 105, 180, 0.2) !important;
+    --bg-base: #0e0e10 !important;
+    --mesh-1: rgba(145, 71, 255, 0.22) !important;
+    --mesh-2: rgba(80, 40, 160, 0.18) !important;
+    --mesh-3: rgba(120, 50, 220, 0.12) !important;
   }
 
   body {
     background-color: var(--bg-base);
-    background-image:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%),
-      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     color: var(--text-primary);
-    font-family: 'Comfortaa', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
