@@ -185,7 +185,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative glass-panel overflow-hidden bg-black aspect-video flex flex-col justify-between group shadow-2xl"
+      className="relative overflow-hidden bg-black aspect-video rounded-2xl border border-[#2d2d35] flex items-center justify-center group shadow-2xl"
     >
       {/* Video Element */}
       <video
@@ -200,20 +200,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {/* Empty State Overlay */}
       {!hasSource && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-950/85 backdrop-blur-sm z-20">
-          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-400/25 flex items-center justify-center text-sky-400 mb-4">
-            <Film className="w-8 h-8" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#0b0b0e]/95 z-20">
+          <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400 mb-3.5">
+            <Film className="w-7 h-7" />
           </div>
-          <h3 className="text-lg font-bold text-white syne">Экран совместного просмотра</h3>
-          <p className="text-xs text-slate-300 max-w-md mt-1 mb-5">
-            Ведущий может загрузить MP4/WebM видео, выбрать демо-ролик или запустить трансляцию вкладки браузера со звуком.
+          <h3 className="text-base font-bold text-white mb-1.5">Экран совместного просмотра</h3>
+          <p className="text-xs text-zinc-400 max-w-sm mb-5 leading-relaxed">
+            Запустите трансляцию вкладки браузера со звуком или выберите тестовое видео.
           </p>
           {isHost && (
             <button
               onClick={() => onUpdateState({ sourceUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', isPlaying: false })}
-              className="btn btn-primary text-xs"
+              className="py-2.5 px-5 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-semibold text-xs rounded-xl transition-all shadow-md"
             >
-              Запустить Big Buck Bunny (1080p)
+              Запустить демо (Big Buck Bunny 1080p)
             </button>
           )}
         </div>

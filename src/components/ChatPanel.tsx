@@ -82,13 +82,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   };
 
   return (
-    <div className="glass-panel p-4 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
-        <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2 syne">
-          <MessageSquare className="w-4 h-4 text-sky-400" />
+    <div className="bg-[#18181b] border border-[#2d2d35] rounded-xl p-3.5 flex flex-col h-full shadow-lg">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#26262c]">
+        <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400 flex items-center gap-1.5">
+          <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
           <span>Чат комнаты</span>
         </h3>
-        <span className="text-[10px] text-slate-400 font-mono">P2P Encrypted</span>
+        <span className="text-[10px] text-zinc-500 font-mono">P2P</span>
       </div>
 
       {/* Messages Scrollable List */}

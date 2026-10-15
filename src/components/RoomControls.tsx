@@ -81,7 +81,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   };
 
   return (
-    <div className="glass-panel p-3.5 flex flex-wrap items-center justify-between gap-3">
+    <div className="bg-[#18181b] border border-[#2d2d35] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-lg">
       {/* Left controls: Share invite & Video source */}
       <div className="flex items-center gap-2 flex-wrap">
         <button
