@@ -179,7 +179,10 @@ export function App() {
       },
       onStreamStopped: (senderId, isScreen) => {
         if (isScreen) {
-          setScreenStream(null);
+          // If the host is currently broadcasting their screen, remote stream stops shouldn't kill local broadcast
+          if (!screenServiceRef.current.hasActiveStream() && !isScreenSharing) {
+            setScreenStream(null);
+          }
           const screenAudioKey = `${senderId}_screen_audio`;
           const audioEl = remoteAudioElementsRef.current.get(screenAudioKey);
           if (audioEl) {

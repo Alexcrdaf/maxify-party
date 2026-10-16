@@ -104,6 +104,13 @@ export class ScreenCaptureService {
     return this.currentStream.getAudioTracks().length > 0;
   }
 
+  public hasActiveStream(): boolean {
+    return Boolean(
+      this.currentStream &&
+        this.currentStream.getTracks().some((track) => track.readyState === 'live')
+    );
+  }
+
   public stopCapture() {
     if (this.currentStream) {
       this.currentStream.getTracks().forEach((track) => track.stop());

@@ -233,10 +233,13 @@ export class RoomManager {
     if (!this.peer || this.peer.destroyed) return;
     const callKey = `${peerId}_${isScreenShare ? 'screen' : 'voice'}`;
 
-    // If an active media connection for this type exists, close it cleanly to renegotiate new stream
+    // If an active media connection for this type exists, close it cleanly without triggering onStreamStopped
     const existingCall = this.mediaCalls.get(callKey);
     if (existingCall) {
       try {
+        // Detach event listeners so replacement doesn't trigger onStreamStopped
+        existingCall.off('close');
+        existingCall.off('stream');
         existingCall.close();
       } catch (_) {}
       this.mediaCalls.delete(callKey);
@@ -247,7 +250,15 @@ export class RoomManager {
         metadata: { isScreenShare },
       });
       if (call) {
-        this.handleIncomingMediaCall(call);
+        // Track the outgoing call so we can close it when stopping the stream
+        this.mediaCalls.set(callKey, call);
+        call.on('close', () => {
+          this.mediaCalls.delete(callKey);
+        });
+        call.on('error', (err) => {
+          console.warn(`Outgoing media call error on ${callKey}:`, err);
+          this.mediaCalls.delete(callKey);
+        });
       }
     } catch (err) {
       console.warn(`Error calling peer ${peerId} with ${isScreenShare ? 'screen' : 'voice'}:`, err);
