@@ -19,6 +19,7 @@ export interface RoomCallbacks {
   onError: (err: string) => void;
   onConnectionStatusChange: (status: 'connecting' | 'connected' | 'disconnected' | 'reconnecting') => void;
   onIncomingStream: (stream: MediaStream, senderId: string, isScreenShare: boolean) => void;
+  onStreamStopped?: (senderId: string, isScreenShare: boolean) => void;
 }
 
 export class RoomManager {
@@ -232,12 +233,8 @@ export class RoomManager {
     if (!this.peer || this.peer.destroyed) return;
     const callKey = `${peerId}_${isScreenShare ? 'screen' : 'voice'}`;
 
-    // If an active media connection for this type already exists and is open/calling, reuse it
+    // If an active media connection for this type exists, close it cleanly to renegotiate new stream
     const existingCall = this.mediaCalls.get(callKey);
-    if (existingCall && (existingCall as any).open) {
-      return;
-    }
-
     if (existingCall) {
       try {
         existingCall.close();
@@ -264,14 +261,27 @@ export class RoomManager {
 
     call.on('stream', (remoteStream) => {
       this.callbacks.onIncomingStream(remoteStream, call.peer, isScreen);
+
+      // Listen for remote track endings
+      remoteStream.getTracks().forEach((track) => {
+        track.onended = () => {
+          if (this.callbacks.onStreamStopped) {
+            this.callbacks.onStreamStopped(call.peer, isScreen);
+          }
+        };
+      });
     });
 
     call.on('close', () => {
       this.mediaCalls.delete(callKey);
+      if (this.callbacks.onStreamStopped) {
+        this.callbacks.onStreamStopped(call.peer, isScreen);
+      }
     });
 
     call.on('error', (err) => {
       console.warn(`MediaConnection error on ${callKey}:`, err);
+      this.mediaCalls.delete(callKey);
     });
   }
 
@@ -340,6 +350,17 @@ export class RoomManager {
         // If participant asks for screen stream re-send (e.g. negotiation retry or reconnect)
         if (this.isHost && this.activeLocalStream && this.isScreenSharing) {
           this.callPeerWithStream(conn.peer, this.activeLocalStream, true);
+        }
+        break;
+      }
+
+      case 'stream_stopped': {
+        const { isScreen } = msg.payload || {};
+        if (this.callbacks.onStreamStopped) {
+          this.callbacks.onStreamStopped(msg.senderId, isScreen !== false);
+        }
+        if (this.isHost) {
+          this.broadcast(msg, msg.senderId);
         }
         break;
       }
@@ -485,10 +506,28 @@ export class RoomManager {
     this.connections.forEach((_conn, peerId) => {
       const callKey = `${peerId}_voice`;
       if (this.mediaCalls.has(callKey)) {
-        this.mediaCalls.get(callKey)?.close();
+        try {
+          this.mediaCalls.get(callKey)?.close();
+        } catch (_) {}
         this.mediaCalls.delete(callKey);
       }
     });
+
+    const msg: SignalingMessage = {
+      type: 'stream_stopped',
+      roomId: this.roomId,
+      senderId: this.myId,
+      payload: { isScreen: false },
+      timestamp: Date.now(),
+    };
+    if (this.isHost) {
+      this.broadcast(msg);
+    } else {
+      const hostConn = this.connections.get(`syncwave-room-${this.roomId}`);
+      if (hostConn && hostConn.open) {
+        hostConn.send(msg);
+      }
+    }
   }
 
   public sendScreenStream(stream: MediaStream) {
@@ -509,10 +548,28 @@ export class RoomManager {
       this.connections.forEach((_conn, peerId) => {
         const callKey = `${peerId}_screen`;
         if (this.mediaCalls.has(callKey)) {
-          this.mediaCalls.get(callKey)?.close();
+          try {
+            this.mediaCalls.get(callKey)?.close();
+          } catch (_) {}
           this.mediaCalls.delete(callKey);
         }
       });
+
+      const msg: SignalingMessage = {
+        type: 'stream_stopped',
+        roomId: this.roomId,
+        senderId: this.myId,
+        payload: { isScreen: true },
+        timestamp: Date.now(),
+      };
+      if (this.isHost) {
+        this.broadcast(msg);
+      } else {
+        const hostConn = this.connections.get(`syncwave-room-${this.roomId}`);
+        if (hostConn && hostConn.open) {
+          hostConn.send(msg);
+        }
+      }
     }
   }
 

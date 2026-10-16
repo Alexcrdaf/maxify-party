@@ -48,6 +48,7 @@ export type SignalingMessageType =
   | 'join_request'
   | 'room_state'
   | 'request_screen_stream'
+  | 'stream_stopped'
   | 'playback_sync'
   | 'chat_message'
   | 'kick'

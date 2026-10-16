@@ -171,6 +171,27 @@ export function App() {
           });
         }
       },
+      onStreamStopped: (senderId, isScreen) => {
+        if (isScreen) {
+          setScreenStream(null);
+          const screenAudioKey = `${senderId}_screen_audio`;
+          const audioEl = remoteAudioElementsRef.current.get(screenAudioKey);
+          if (audioEl) {
+            audioEl.pause();
+            audioEl.srcObject = null;
+            audioEl.remove();
+            remoteAudioElementsRef.current.delete(screenAudioKey);
+          }
+        } else {
+          const audioEl = remoteAudioElementsRef.current.get(senderId);
+          if (audioEl) {
+            audioEl.pause();
+            audioEl.srcObject = null;
+            audioEl.remove();
+            remoteAudioElementsRef.current.delete(senderId);
+          }
+        }
+      },
     });
 
     roomManagerRef.current = manager;
@@ -273,6 +294,27 @@ export function App() {
           audioEl.play().catch((err) => {
             console.warn('Autoplay prevented, requires user interaction:', err);
           });
+        }
+      },
+      onStreamStopped: (senderId, isScreen) => {
+        if (isScreen) {
+          setScreenStream(null);
+          const screenAudioKey = `${senderId}_screen_audio`;
+          const audioEl = remoteAudioElementsRef.current.get(screenAudioKey);
+          if (audioEl) {
+            audioEl.pause();
+            audioEl.srcObject = null;
+            audioEl.remove();
+            remoteAudioElementsRef.current.delete(screenAudioKey);
+          }
+        } else {
+          const audioEl = remoteAudioElementsRef.current.get(senderId);
+          if (audioEl) {
+            audioEl.pause();
+            audioEl.srcObject = null;
+            audioEl.remove();
+            remoteAudioElementsRef.current.delete(senderId);
+          }
         }
       },
     });
