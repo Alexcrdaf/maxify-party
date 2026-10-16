@@ -8,6 +8,8 @@ import {
   Link as LinkIcon,
   Check,
   Film,
+  MessageSquare,
+  MessageSquareOff,
 } from 'lucide-react';
 import { VoiceChatService } from '../services/VoiceChatService';
 import { ScreenCaptureService } from '../services/ScreenCaptureService';
@@ -25,6 +27,8 @@ interface RoomControlsProps {
   onVoiceStreamReady: (stream: MediaStream) => void;
   onStopVoiceStream?: () => void;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
+  isChatVisible?: boolean;
+  onToggleChat?: () => void;
 }
 
 export const RoomControls: React.FC<RoomControlsProps> = ({
@@ -38,6 +42,8 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   voiceService,
   onVoiceStreamReady,
   onStopVoiceStream,
+  isChatVisible = true,
+  onToggleChat,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isMicActive, setIsMicActive] = useState(false);
@@ -52,10 +58,25 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   ];
 
   const handleCopyLink = () => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    // Generate reliable invite link that supports both GitHub Pages subpath and query parameters
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', roomCode);
+    const shareUrl = url.toString();
+
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      // Fallback if clipboard API is restricted
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const handleLeave = () => {
@@ -155,6 +176,30 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
             </>
           )}
         </button>
+
+        {onToggleChat && (
+          <button
+            onClick={onToggleChat}
+            className={`btn text-xs ${
+              isChatVisible
+                ? 'btn-ghost'
+                : 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+            }`}
+            title={isChatVisible ? 'Скрыть панель чата и участников' : 'Показать панель чата и участников'}
+          >
+            {isChatVisible ? (
+              <>
+                <MessageSquareOff className="w-4 h-4 text-slate-300" />
+                <span className="hidden sm:inline">Скрыть чат</span>
+              </>
+            ) : (
+              <>
+                <MessageSquare className="w-4 h-4 text-purple-400" />
+                <span className="hidden sm:inline">Показать чат</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Right controls: Leave Room */}

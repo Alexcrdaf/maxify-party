@@ -28,6 +28,7 @@ export function App() {
   >('disconnected');
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(true);
   const [externalNotice, setExternalNotice] = useState<{ title: string; description: string } | null>(null);
 
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
@@ -46,8 +47,13 @@ export function App() {
   const remoteAudioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const roomParam = params.get('room');
+    // Check both standard query search params and hash (in case router / host uses hash format)
+    const url = new URL(window.location.href);
+    let roomParam = url.searchParams.get('room');
+    if (!roomParam && window.location.hash.includes('room=')) {
+      const match = window.location.hash.match(/[?&]room=([^&]+)/);
+      if (match) roomParam = match[1];
+    }
     if (roomParam) {
       setRoomCode(roomParam.toUpperCase());
     }
@@ -463,14 +469,15 @@ export function App() {
       {!inRoom ? (
         <main id="main-content" className="flex-1 flex flex-col">
           <LandingPage
+            initialRoomCode={roomCode}
             onCreateRoom={handleCreateRoom}
             onJoinRoom={handleJoinRoom}
           />
         </main>
       ) : (
-        <main id="main-content" className="flex-1 p-4 lg:p-6 max-w-[1600px] w-full mx-auto flex flex-col gap-4">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-1">
-            <div className="lg:col-span-3 flex flex-col gap-4">
+        <main id="main-content" className="flex-1 p-4 lg:p-6 max-w-[1700px] w-full mx-auto flex flex-col gap-4">
+          <div className={`grid grid-cols-1 ${isChatVisible ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-4 flex-1 transition-all duration-300`}>
+            <div className={`${isChatVisible ? 'lg:col-span-3' : 'lg:col-span-1 max-w-5xl mx-auto w-full'} flex flex-col gap-4 transition-all duration-300`}>
               <VideoPlayer
                 playbackState={playbackState}
                 onUpdateState={handleUpdatePlaybackState}
@@ -507,28 +514,32 @@ export function App() {
                   roomManagerRef.current?.stopVoiceStream();
                 }}
                 connectionStatus={connectionStatus}
+                isChatVisible={isChatVisible}
+                onToggleChat={() => setIsChatVisible((prev) => !prev)}
               />
             </div>
 
-            <div className="lg:col-span-1 flex flex-col gap-4 h-[750px] lg:h-auto">
-              <div className="h-1/2">
-                <ParticipantList
-                  participants={participants}
-                  currentUserId={myId}
-                  isHost={isHost}
-                  onTransferHost={(targetId) => roomManagerRef.current?.transferHost(targetId)}
-                  onKickParticipant={(targetId) => roomManagerRef.current?.kickParticipant(targetId)}
-                />
-              </div>
+            {isChatVisible && (
+              <div className="lg:col-span-1 flex flex-col gap-4 h-[750px] lg:h-auto animate-fadeIn">
+                <div className="h-1/2">
+                  <ParticipantList
+                    participants={participants}
+                    currentUserId={myId}
+                    isHost={isHost}
+                    onTransferHost={(targetId) => roomManagerRef.current?.transferHost(targetId)}
+                    onKickParticipant={(targetId) => roomManagerRef.current?.kickParticipant(targetId)}
+                  />
+                </div>
 
-              <div className="h-1/2">
-                <ChatPanel
-                  messages={chatMessages}
-                  currentUserId={myId}
-                  onSendMessage={(text, file) => roomManagerRef.current?.sendChatMessage(text, file)}
-                />
+                <div className="h-1/2">
+                  <ChatPanel
+                    messages={chatMessages}
+                    currentUserId={myId}
+                    onSendMessage={(text, file) => roomManagerRef.current?.sendChatMessage(text, file)}
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </main>
       )}

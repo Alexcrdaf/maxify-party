@@ -12,16 +12,23 @@ import {
 import { isValidRoomCode } from '../config';
 
 interface LandingPageProps {
+  initialRoomCode?: string;
   onCreateRoom: (name: string) => void;
   onJoinRoom: (roomCode: string, name: string) => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onCreateRoom, onJoinRoom }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', onCreateRoom, onJoinRoom }) => {
   const [userName, setUserName] = useState(() => {
     return localStorage.getItem('maxify_user_name') || '';
   });
-  const [roomCode, setRoomCode] = useState('');
+  const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [errorMsg, setErrorMsg] = useState('');
+
+  React.useEffect(() => {
+    if (initialRoomCode) {
+      setRoomCode(initialRoomCode);
+    }
+  }, [initialRoomCode]);
 
   const randomNames = ['Алекс', 'Макс', 'София', 'Даниил', 'Ева', 'Кирилл', 'Алина', 'Артём'];
 
