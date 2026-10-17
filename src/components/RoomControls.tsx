@@ -115,34 +115,35 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   };
 
   return (
-    <div className="bg-[#18181b] border border-[#2d2d35] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+    <div className="bg-[#18181b] border border-[#2d2d35] rounded-xl p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-lg">
       {/* Left controls: Share invite & Video source */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <button
           onClick={handleCopyLink}
-          className="btn btn-ghost text-xs"
+          className="btn btn-ghost text-xs px-2 sm:px-3 py-1.5"
           title="Скопировать ссылку для приглашения друга"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-sky-400" />}
-          <span>{copied ? 'Скопировано!' : 'Пригласить друга'}</span>
+          <span>{copied ? 'Скопировано!' : 'Пригласить'}</span>
         </button>
 
         {isHost && (
           <button
             onClick={() => setShowUrlModal(true)}
-            className="btn btn-ghost text-xs"
+            className="btn btn-ghost text-xs px-2 sm:px-3 py-1.5"
           >
             <LinkIcon className="w-3.5 h-3.5 text-sky-400" />
-            <span>Выбрать видео / Ссылку</span>
+            <span className="hidden xs:inline">Видео / Ссылка</span>
+            <span className="xs:hidden">Видео</span>
           </button>
         )}
       </div>
 
       {/* Center controls: Screen share & Microphone */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <button
           onClick={isScreenSharing ? onStopScreenShare : onStartScreenShare}
-          className={`btn text-xs ${
+          className={`btn text-xs px-2 sm:px-3 py-1.5 ${
             isScreenSharing
               ? 'btn-danger'
               : 'btn-ghost'
@@ -157,7 +158,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
 
         <button
           onClick={toggleMic}
-          className={`btn text-xs ${
+          className={`btn text-xs px-2 sm:px-3 py-1.5 ${
             isMicActive
               ? 'bg-emerald-500/25 text-emerald-200 border-emerald-400/50 shadow-lg shadow-emerald-500/20'
               : 'btn-ghost'
@@ -167,12 +168,12 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
           {isMicActive ? (
             <>
               <Mic className="w-4 h-4 text-emerald-300 animate-pulse" />
-              <span>Голос активен</span>
+              <span>Голос</span>
             </>
           ) : (
             <>
               <MicOff className="w-4 h-4 text-slate-300" />
-              <span>Микрофон</span>
+              <span className="hidden xs:inline">Микрофон</span>
             </>
           )}
         </button>
@@ -180,7 +181,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
         {onToggleChat && (
           <button
             onClick={onToggleChat}
-            className={`btn text-xs ${
+            className={`btn text-xs px-2 sm:px-3 py-1.5 ${
               isChatVisible
                 ? 'btn-ghost'
                 : 'bg-purple-500/20 text-purple-300 border-purple-500/30'
@@ -195,7 +196,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
             ) : (
               <>
                 <MessageSquare className="w-4 h-4 text-purple-400" />
-                <span className="hidden sm:inline">Показать чат</span>
+                <span className="hidden sm:inline">Панель</span>
               </>
             )}
           </button>
@@ -206,7 +207,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
       <div>
         <button
           onClick={handleLeave}
-          className="btn btn-danger text-xs"
+          className="btn btn-danger text-xs px-2.5 sm:px-3 py-1.5"
           title="Покинуть сессию"
         >
           <LogOut className="w-3.5 h-3.5" />

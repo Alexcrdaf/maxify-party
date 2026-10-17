@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Film,
   ScreenShare,
@@ -8,12 +8,21 @@ import {
   ShieldCheck,
   Zap,
   Globe,
+  Clock,
+  Trash2,
+  Bookmark,
 } from 'lucide-react';
 import { isValidRoomCode } from '../config';
 
+interface SavedRoom {
+  code: string;
+  isHost: boolean;
+  lastJoined: number;
+}
+
 interface LandingPageProps {
   initialRoomCode?: string;
-  onCreateRoom: (name: string) => void;
+  onCreateRoom: (name: string, customCode?: string) => void;
   onJoinRoom: (roomCode: string, name: string) => void;
 }
 
@@ -23,8 +32,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
   });
   const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [errorMsg, setErrorMsg] = useState('');
+  const [savedRooms, setSavedRooms] = useState<SavedRoom[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('maxify_saved_rooms');
+      if (stored) {
+        setSavedRooms(JSON.parse(stored));
+      }
+    } catch (_) {}
+  }, []);
+
+  const handleDeleteSavedRoom = (codeToDelete: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = savedRooms.filter((r) => r.code !== codeToDelete);
+    setSavedRooms(updated);
+    try {
+      localStorage.setItem('maxify_saved_rooms', JSON.stringify(updated));
+    } catch (_) {}
+  };
+
+  const handleSelectSavedRoom = (code: string) => {
+    setRoomCode(code);
+    setErrorMsg('');
+  };
+
+  useEffect(() => {
     if (initialRoomCode) {
       setRoomCode(initialRoomCode);
     }
@@ -200,13 +233,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
                   <p className="text-xs text-rose-400 mt-2 font-medium" role="alert">{errorMsg}</p>
                 )}
               </form>
+              {/* Saved / Recent Rooms */}
+              {savedRooms.length > 0 && (
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                      <Bookmark className="w-3.5 h-3.5 text-purple-400" />
+                      Сохранённые комнаты
+                    </span>
+                    <span className="text-[10px] text-zinc-500">Нажмите для быстрого входа</span>
+                  </div>
+                  <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1">
+                    {savedRooms.map((saved) => (
+                      <div
+                        key={saved.code}
+                        onClick={() => handleSelectSavedRoom(saved.code)}
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                          roomCode === saved.code
+                            ? 'bg-purple-600/20 border-purple-500/50 text-white'
+                            : 'bg-[#121214] border-[#2d2d35] hover:border-zinc-500 text-zinc-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                          <span className="font-mono font-bold tracking-wider">{saved.code}</span>
+                          <span className="text-[10px] text-zinc-500 px-1.5 py-0.5 rounded bg-zinc-800">
+                            {saved.isHost ? 'Создана вами' : 'Участник'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteSavedRoom(saved.code, e)}
+                            className="p-1 text-zinc-500 hover:text-rose-400 rounded transition-colors"
+                            title="Удалить из сохранённых"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Test hint */}
             <div className="mt-5 pt-3 border-t border-[#2d2d35] flex items-center gap-2 text-xs text-zinc-400">
               <Zap className="w-3.5 h-3.5 text-purple-400 shrink-0" />
               <span>
-                Откройте созданную ссылку во второй вкладке для проверки.
+                Комната сохраняется в браузере. Вы можете повторно подключаться к ней в любое время.
               </span>
             </div>
           </div>

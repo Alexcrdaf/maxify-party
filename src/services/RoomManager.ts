@@ -33,6 +33,7 @@ export class RoomManager {
   private mediaCalls: Map<string, MediaConnection> = new Map();
   private callbacks: RoomCallbacks;
   private heartbeatTimer: any = null;
+  private serverKeepAliveTimer: any = null;
   private activeLocalStream: MediaStream | null = null;
   private activeVoiceStream: MediaStream | null = null;
   private isScreenSharing: boolean = false;
@@ -69,7 +70,20 @@ export class RoomManager {
         this.myId = id;
         this.callbacks.onConnectionStatusChange('connected');
         this.startHeartbeat();
+        this.startServerKeepAlive();
         resolve(id);
+      });
+
+      this.peer.on('disconnected', () => {
+        // If peer disconnected from signaling server (e.g. idle timeout after ~15-20 min),
+        // reconnect to server without destroying the peer ID or active calls
+        if (this.peer && !this.peer.destroyed) {
+          try {
+            this.peer.reconnect();
+          } catch (e) {
+            console.warn('Peer reconnect failed:', e);
+          }
+        }
       });
 
       this.peer.on('error', (err: any) => {
@@ -150,6 +164,7 @@ export class RoomManager {
           };
           conn.send(joinMsg);
           this.startHeartbeat();
+          this.startServerKeepAlive();
           resolve(id);
         });
 
@@ -165,6 +180,16 @@ export class RoomManager {
         conn.on('error', (err) => {
           this.callbacks.onError(`Ошибка соединения с комнатой: ${err}`);
         });
+      });
+
+      this.peer.on('disconnected', () => {
+        if (this.peer && !this.peer.destroyed) {
+          try {
+            this.peer.reconnect();
+          } catch (e) {
+            console.warn('Guest peer reconnect failed:', e);
+          }
+        }
       });
 
       this.peer.on('error', (err: any) => {
@@ -627,8 +652,40 @@ export class RoomManager {
     }, APP_CONFIG.heartbeatIntervalMs);
   }
 
+  /**
+   * Signaling Server Keep-Alive:
+   * Public WebRTC signaling servers (e.g. 0.peerjs.com or custom servers) close
+   * idle WebSocket connections if no ping is sent within 45-60 seconds, which
+   * causes the host to disconnect from signaling and prevents new peers from joining after 20 minutes.
+   * This keep-alive ensures the room stays active and joinable indefinitely.
+   */
+  private startServerKeepAlive() {
+    if (this.serverKeepAliveTimer) clearInterval(this.serverKeepAliveTimer);
+    this.serverKeepAliveTimer = setInterval(() => {
+      if (this.peer && !this.peer.destroyed) {
+        if (this.peer.disconnected) {
+          // Reconnect to signaling server if disconnected
+          try {
+            this.peer.reconnect();
+          } catch (e) {
+            console.warn('Keep-alive reconnect attempt failed:', e);
+          }
+        } else {
+          // Send HEARTBEAT message on the underlying PeerJS socket connection
+          try {
+            const socket: any = (this.peer as any).socket;
+            if (socket && typeof socket._send === 'function') {
+              socket._send({ type: 'HEARTBEAT' });
+            }
+          } catch (_) {}
+        }
+      }
+    }, 25000); // Send keep-alive every 25 seconds
+  }
+
   public destroy() {
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    if (this.serverKeepAliveTimer) clearInterval(this.serverKeepAliveTimer);
     this.stopScreenStream();
     this.stopVoiceStream();
     this.connections.forEach((conn) => conn.close());

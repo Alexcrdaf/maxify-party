@@ -12,7 +12,7 @@ import {
   ScreenCaptureService,
   VoiceChatService,
 } from './services';
-import { generateRoomCode } from './config';
+import { generateRoomCode, isValidRoomCode } from './config';
 import { analyzeMediaUrl } from './utils/mediaDetector';
 import type { Participant, PlaybackState, ChatMessage } from './types';
 
@@ -59,10 +59,21 @@ export function App() {
     }
   }, []);
 
-  const handleCreateRoom = async (name: string) => {
-    const code = generateRoomCode();
+  const saveRoomToStorage = (code: string, isHostRole: boolean) => {
+    try {
+      const stored = localStorage.getItem('maxify_saved_rooms');
+      const list: Array<{ code: string; isHost: boolean; lastJoined: number }> = stored ? JSON.parse(stored) : [];
+      const filtered = list.filter((item) => item.code !== code);
+      filtered.unshift({ code, isHost: isHostRole, lastJoined: Date.now() });
+      localStorage.setItem('maxify_saved_rooms', JSON.stringify(filtered.slice(0, 8)));
+    } catch (_) {}
+  };
+
+  const handleCreateRoom = async (name: string, customCode?: string) => {
+    const code = customCode && isValidRoomCode(customCode) ? customCode.toUpperCase() : generateRoomCode();
     setRoomCode(code);
     setIsHost(true);
+    saveRoomToStorage(code, true);
 
     const initialProfile: Participant = {
       id: `syncwave-room-${code}`,
@@ -216,8 +227,10 @@ export function App() {
   };
 
   const handleJoinRoom = async (code: string, name: string) => {
-    setRoomCode(code);
+    const cleanCode = code.toUpperCase();
+    setRoomCode(cleanCode);
     setIsHost(false);
+    saveRoomToStorage(cleanCode, false);
 
     const initialProfile: Participant = {
       id: '',
@@ -478,9 +491,9 @@ export function App() {
           />
         </main>
       ) : (
-        <main id="main-content" className="flex-1 p-4 lg:p-6 max-w-[1700px] w-full mx-auto flex flex-col gap-4">
-          <div className={`grid grid-cols-1 ${isChatVisible ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-4 flex-1 transition-all duration-300`}>
-            <div className={`${isChatVisible ? 'lg:col-span-3' : 'lg:col-span-1 max-w-5xl mx-auto w-full'} flex flex-col gap-4 transition-all duration-300`}>
+        <main id="main-content" className="flex-1 p-2 sm:p-4 lg:p-6 max-w-[1700px] w-full mx-auto flex flex-col gap-3 sm:gap-4">
+          <div className={`grid grid-cols-1 ${isChatVisible ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-3 sm:gap-4 flex-1 transition-all duration-300`}>
+            <div className={`${isChatVisible ? 'lg:col-span-3' : 'lg:col-span-1 max-w-5xl mx-auto w-full'} flex flex-col gap-3 sm:gap-4 transition-all duration-300`}>
               <VideoPlayer
                 playbackState={playbackState}
                 onUpdateState={handleUpdatePlaybackState}
@@ -490,8 +503,8 @@ export function App() {
                 onRequestScreenStream={() => roomManagerRef.current?.requestScreenStream()}
                 externalNotice={externalNotice}
               >
-                {/* Embedded Chat during Fullscreen view */}
-                <div className="h-80 flex flex-col">
+                {/* Embedded In-Player Chat */}
+                <div className="h-64 sm:h-72 flex flex-col">
                   <ChatPanel
                     messages={chatMessages}
                     currentUserId={myId}
@@ -523,8 +536,8 @@ export function App() {
             </div>
 
             {isChatVisible && (
-              <div className="lg:col-span-1 flex flex-col gap-4 h-[750px] lg:h-auto animate-fadeIn">
-                <div className="h-1/2">
+              <div className="lg:col-span-1 flex flex-col gap-3 sm:gap-4 h-[550px] lg:h-auto animate-fadeIn">
+                <div className="h-1/3 sm:h-2/5 min-h-[140px]">
                   <ParticipantList
                     participants={participants}
                     currentUserId={myId}
@@ -534,7 +547,7 @@ export function App() {
                   />
                 </div>
 
-                <div className="h-1/2">
+                <div className="flex-1 min-h-[260px]">
                   <ChatPanel
                     messages={chatMessages}
                     currentUserId={myId}

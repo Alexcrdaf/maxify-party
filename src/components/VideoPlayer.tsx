@@ -10,6 +10,8 @@ import {
   RotateCcw,
   RotateCw,
   RefreshCw,
+  MessageSquare,
+  MessageSquareOff,
 } from 'lucide-react';
 import type { PlaybackState } from '../types';
 import { APP_CONFIG } from '../config';
@@ -23,6 +25,8 @@ interface VideoPlayerProps {
   onRequestScreenStream?: () => void;
   externalNotice?: { title: string; description: string } | null;
   children?: React.ReactNode;
+  isChatOpenInPlayer?: boolean;
+  onToggleInPlayerChat?: () => void;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -33,6 +37,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onRequestScreenStream,
   externalNotice,
   children,
+  isChatOpenInPlayer,
+  onToggleInPlayerChat,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,7 +48,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [volume, setVolume] = useState(0.9);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [localShowChatOverlay, setLocalShowChatOverlay] = useState(false);
   const isSyncingRef = useRef(false);
+
+  const showChatOverlay = isChatOpenInPlayer !== undefined ? isChatOpenInPlayer : localShowChatOverlay;
+  const toggleChatOverlay = onToggleInPlayerChat || (() => setLocalShowChatOverlay((prev) => !prev));
 
   // Bind screenStream if available
   useEffect(() => {
@@ -300,6 +310,21 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
             {/* Right side buttons */}
             <div className="flex items-center gap-2">
+              {children && (
+                <button
+                  onClick={toggleChatOverlay}
+                  className={`p-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors border ${
+                    showChatOverlay
+                      ? 'bg-purple-600/90 text-white border-purple-400/50 shadow-md'
+                      : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border-white/10'
+                  }`}
+                  title={showChatOverlay ? 'Скрыть чат в плеере' : 'Открыть чат прямо в плеере'}
+                >
+                  {showChatOverlay ? <MessageSquareOff className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline">{showChatOverlay ? 'Чат (вкл)' : 'Чат в видео'}</span>
+                </button>
+              )}
+
               {onRequestScreenStream && !isHost && (
                 <button
                   onClick={onRequestScreenStream}
@@ -323,10 +348,29 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Floating overlay (e.g. chat in fullscreen mode) */}
-      {isFullscreen && children && (
-        <div className="absolute top-4 right-4 z-40 w-80 max-h-[85%] flex flex-col pointer-events-auto shadow-2xl rounded-2xl overflow-hidden border border-white/20 bg-slate-950/80 backdrop-blur-md">
-          {children}
+      {/* Floating overlay: inside player both in fullscreen and windowed mode */}
+      {showChatOverlay && children && (
+        <div className={`absolute z-40 flex flex-col pointer-events-auto shadow-2xl rounded-2xl overflow-hidden border border-white/15 bg-black/85 backdrop-blur-md transition-all duration-200 ${
+          isFullscreen
+            ? 'top-4 right-4 w-80 max-h-[85%]'
+            : 'top-3 right-3 sm:top-4 sm:right-4 w-72 sm:w-80 max-h-[82%]'
+        }`}>
+          <div className="flex items-center justify-between px-3 py-1.5 bg-[#18181b]/90 border-b border-white/10">
+            <span className="text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5">
+              <MessageSquare className="w-3 h-3 text-purple-400" />
+              Чат трансляции
+            </span>
+            <button
+              onClick={toggleChatOverlay}
+              className="text-zinc-400 hover:text-white p-1 rounded-md text-xs hover:bg-white/10"
+              title="Закрыть чат в плеере"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {children}
+          </div>
         </div>
       )}
     </div>
