@@ -256,9 +256,9 @@ export class RoomManager {
 
   public callPeerWithStream(peerId: string, stream: MediaStream, isScreenShare: boolean) {
     if (!this.peer || this.peer.destroyed) return;
-    const callKey = `${peerId}_${isScreenShare ? 'screen' : 'voice'}`;
+    const callKey = `out_${peerId}_${isScreenShare ? 'screen' : 'voice'}`;
 
-    // If an active media connection for this type exists, close it cleanly without triggering onStreamStopped
+    // If an active outgoing media connection for this type exists, close it cleanly without triggering onStreamStopped
     const existingCall = this.mediaCalls.get(callKey);
     if (existingCall) {
       try {
@@ -292,7 +292,19 @@ export class RoomManager {
 
   private handleIncomingMediaCall(call: MediaConnection) {
     const isScreen = call.metadata?.isScreenShare === true;
-    const callKey = `${call.peer}_${isScreen ? 'screen' : 'voice'}`;
+    const callKey = `in_${call.peer}_${isScreen ? 'screen' : 'voice'}`;
+
+    // Clean up any stale incoming call for this peer/type
+    const existingCall = this.mediaCalls.get(callKey);
+    if (existingCall && existingCall !== call) {
+      try {
+        existingCall.off('close');
+        existingCall.off('stream');
+        existingCall.close();
+      } catch (_) {}
+      this.mediaCalls.delete(callKey);
+    }
+
     this.mediaCalls.set(callKey, call);
 
     call.on('stream', (remoteStream) => {
@@ -540,7 +552,7 @@ export class RoomManager {
   public stopVoiceStream() {
     this.activeVoiceStream = null;
     this.connections.forEach((_conn, peerId) => {
-      const callKey = `${peerId}_voice`;
+      const callKey = `out_${peerId}_voice`;
       if (this.mediaCalls.has(callKey)) {
         try {
           this.mediaCalls.get(callKey)?.close();
@@ -582,7 +594,7 @@ export class RoomManager {
       this.isScreenSharing = false;
 
       this.connections.forEach((_conn, peerId) => {
-        const callKey = `${peerId}_screen`;
+        const callKey = `out_${peerId}_screen`;
         if (this.mediaCalls.has(callKey)) {
           try {
             this.mediaCalls.get(callKey)?.close();
