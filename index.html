@@ -12,6 +12,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Maxify" />
 
+    <!-- Content Security Policy (Strict XSS & Injection protection) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https: data:; connect-src 'self' wss://0.peerjs.com https://0.peerjs.com https://*.peerjs.com wss://*.peerjs.com https://fonts.googleapis.com https:;" />
+
     <!-- Favicon & Touch Icons from reference -->
     <link rel="icon" type="image/png" href="./icon.png" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />

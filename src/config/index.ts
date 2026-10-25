@@ -39,9 +39,20 @@ export const APP_CONFIG: AppConfig = {
 /**
  * Generates human-friendly 6-character room codes (e.g. K7MX42)
  * Avoids ambiguous characters like 0/O, 1/I
+ * Uses cryptographically secure random values (crypto.getRandomValues)
  */
 export function generateRoomCode(): string {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const array = new Uint8Array(APP_CONFIG.roomCodeLength);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(array);
+    let result = '';
+    for (let i = 0; i < APP_CONFIG.roomCodeLength; i++) {
+      result += chars[array[i] % chars.length];
+    }
+    return result;
+  }
+  // Fallback if crypto is unavailable
   let result = '';
   for (let i = 0; i < APP_CONFIG.roomCodeLength; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));

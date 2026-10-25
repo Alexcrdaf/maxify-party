@@ -334,6 +334,9 @@ export class RoomManager {
   }
 
   private handleMessage(msg: SignalingMessage, conn: DataConnection) {
+    const hostPeerId = `syncwave-room-${this.roomId}`;
+    const isFromHost = conn.peer === hostPeerId || conn.peer === this.myId;
+
     switch (msg.type) {
       case 'join_request': {
         if (this.isHost) {
@@ -422,20 +425,41 @@ export class RoomManager {
         break;
 
       case 'playback_sync':
+        // Synchronize playback only if message originated from host, or if host is broadcasting
+        if (!this.isHost && !isFromHost) {
+          console.warn('Playback sync ignored from non-host peer:', conn.peer);
+          return;
+        }
         this.callbacks.onPlaybackSync(msg.payload);
         if (this.isHost) {
           this.broadcast(msg, msg.senderId);
         }
         break;
 
-      case 'chat_message':
-        this.callbacks.onChatMessage(msg.payload);
+      case 'chat_message': {
+        const msgPayload = msg.payload as ChatMessage;
+        // Client-side DoS mitigation: validate size of file / dataUrl
+        if (msgPayload?.file) {
+          const size = msgPayload.file.size || 0;
+          const dataUrlLen = msgPayload.file.dataUrl?.length || 0;
+          if (size > 15 * 1024 * 1024 || dataUrlLen > 22 * 1024 * 1024) {
+            console.warn('Rejected oversized chat attachment from:', conn.peer);
+            return;
+          }
+        }
+        this.callbacks.onChatMessage(msgPayload);
         if (this.isHost) {
           this.broadcast(msg, msg.senderId);
         }
         break;
+      }
 
       case 'transfer_host':
+        // Only current host can transfer host privileges
+        if (!isFromHost && !this.isHost) {
+          console.warn('Unauthorized transfer_host attempt from:', conn.peer);
+          return;
+        }
         if (msg.payload.newHostId === this.myId) {
           this.isHost = true;
           this.callbacks.onHostTransferred(this.myId);
@@ -445,7 +469,12 @@ export class RoomManager {
         break;
 
       case 'kick':
-        if (msg.payload.targetId === this.myId || !msg.payload.targetId) {
+        // Only host is allowed to kick participants; host cannot be kicked by guests
+        if (!isFromHost) {
+          console.warn('Unauthorized kick attempt ignored from:', conn.peer);
+          return;
+        }
+        if (msg.payload?.targetId === this.myId) {
           this.callbacks.onKicked();
           this.destroy();
         }

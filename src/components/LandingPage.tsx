@@ -269,8 +269,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
       )}
 
       {/* Minimal Footer */}
-      <footer className="text-center text-xs text-[#dcbcff]/50 pt-6 border-t border-white/[0.06]">
-        Maxify • Чистый P2P совместный просмотр на GitHub Pages без серверных логов
+      <footer className="text-center text-xs text-[#dcbcff]/50 pt-6 border-t border-white/[0.06] space-y-1">
+        <div>Maxify • Чистый P2P совместный просмотр на GitHub Pages без серверных логов</div>
+        <div className="text-[10px] text-[#dcbcff]/40">
+          Платформа работает по технологии WebRTC P2P (прямой обмен данными между участниками без промежуточного сервера).
+        </div>
       </footer>
     </div>
   );

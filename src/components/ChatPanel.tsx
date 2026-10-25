@@ -59,6 +59,42 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const quickReactions = ['🔥', '😂', '🍿', '😮', '👏'];
 
+  const isSafeDataUrl = (url?: string): boolean => {
+    if (!url) return false;
+    // Allow safe image MIME types and generic binary streams
+    return /^data:(image\/(png|jpeg|jpg|webp|gif)|application\/octet-stream|application\/pdf|text\/plain);base64,[A-Za-z0-9+/=]+$/.test(
+      url
+    );
+  };
+
+  const handleDownload = (file: ChatAttachment) => {
+    if (!isSafeDataUrl(file.dataUrl)) {
+      alert('Недопустимый или потенциально небезопасный формат файла.');
+      return;
+    }
+
+    try {
+      fetch(file.dataUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          // Sanitize filename against path traversal
+          a.download = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        })
+        .catch(() => {
+          alert('Ошибка при скачивании файла.');
+        });
+    } catch {
+      alert('Ошибка при скачивании файла.');
+    }
+  };
+
   const renderMessageContent = (text: string) => {
     // Regex for URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -131,7 +167,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                   {msg.text && <div>{renderMessageContent(msg.text)}</div>}
 
                   {/* Attached file/image */}
-                  {msg.file && (
+                  {msg.file && isSafeDataUrl(msg.file.dataUrl) && (
                     <div className="mt-1 p-2 rounded-xl bg-black/30 border border-white/10 flex flex-col gap-1.5">
                       {msg.file.type.startsWith('image/') ? (
                         <div className="rounded-lg overflow-hidden max-h-48">
@@ -156,14 +192,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                           </span>
                         </div>
 
-                        <a
-                          href={msg.file.dataUrl}
-                          download={msg.file.name}
-                          className="p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors shrink-0"
+                        <button
+                          type="button"
+                          onClick={() => handleDownload(msg.file!)}
+                          className="p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors shrink-0 cursor-pointer"
                           title="Скачать файл"
                         >
                           <Download className="w-3.5 h-3.5 text-white" />
-                        </a>
+                        </button>
                       </div>
                     </div>
                   )}
