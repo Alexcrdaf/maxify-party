@@ -37,6 +37,7 @@ export class RoomManager {
   private activeLocalStream: MediaStream | null = null;
   private activeVoiceStream: MediaStream | null = null;
   private isScreenSharing: boolean = false;
+  private messageCounters: Map<string, { count: number; resetTime: number }> = new Map();
 
   constructor(myProfile: Participant, callbacks: RoomCallbacks) {
     this.myProfile = myProfile;
@@ -277,6 +278,29 @@ export class RoomManager {
       if (call) {
         // Track the outgoing call so we can close it when stopping the stream
         this.mediaCalls.set(callKey, call);
+
+        // Client-side Bandwidth Optimization: limit video bitrate if sharing screen
+        if (isScreenShare) {
+          try {
+            const pc = (call as any).peerConnection as RTCPeerConnection;
+            if (pc && pc.getSenders) {
+              const applyBitrateLimit = () => {
+                const videoSender = pc.getSenders().find((s) => s.track?.kind === 'video');
+                if (videoSender && videoSender.getParameters) {
+                  const params = videoSender.getParameters();
+                  if (!params.encodings || params.encodings.length === 0) {
+                    params.encodings = [{}];
+                  }
+                  // Cap outgoing video bitrate at 2.5 Mbps to protect host uplink
+                  params.encodings[0].maxBitrate = 2500000;
+                  videoSender.setParameters(params).catch(() => {});
+                }
+              };
+              setTimeout(applyBitrateLimit, 500);
+            }
+          } catch (_) {}
+        }
+
         call.on('close', () => {
           this.mediaCalls.delete(callKey);
         });
@@ -333,7 +357,31 @@ export class RoomManager {
     });
   }
 
+  private checkRateLimit(peerId: string): boolean {
+    const now = Date.now();
+    const tracker = this.messageCounters.get(peerId) || { count: 0, resetTime: now + 1000 };
+    if (now > tracker.resetTime) {
+      tracker.count = 1;
+      tracker.resetTime = now + 1000;
+    } else {
+      tracker.count++;
+      if (tracker.count > 15) {
+        return true; // Exceeded limit (max 15 messages/sec)
+      }
+    }
+    this.messageCounters.set(peerId, tracker);
+    return false;
+  }
+
   private handleMessage(msg: SignalingMessage, conn: DataConnection) {
+    if (msg.roomId !== this.roomId) return;
+
+    // Rate Limiting check per connection
+    if (this.checkRateLimit(conn.peer)) {
+      console.warn(`Rate limit exceeded for peer: ${conn.peer}, dropping message ${msg.type}`);
+      return;
+    }
+
     const hostPeerId = `syncwave-room-${this.roomId}`;
     const isFromHost = conn.peer === hostPeerId || conn.peer === this.myId;
 
