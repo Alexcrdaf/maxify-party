@@ -12,6 +12,7 @@ import {
   RefreshCw,
   MessageSquare,
   MessageSquareOff,
+  ScreenShare,
 } from 'lucide-react';
 import type { PlaybackState } from '../types';
 import { APP_CONFIG } from '../config';
@@ -34,6 +35,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onUpdateState,
   isHost,
   screenStream,
+  onStopScreenShare,
   onRequestScreenStream,
   externalNotice,
   children,
@@ -208,6 +210,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         className="w-full h-full object-contain bg-black"
       />
 
+      {/* Screen Sharing Active Bar Overlay */}
+      {screenStream && (
+        <div className="absolute top-4 left-4 z-30 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-600/90 text-white text-xs font-semibold backdrop-blur-md shadow-lg border border-red-400/40 animate-pulse">
+          <ScreenShare className="w-3.5 h-3.5" />
+          <span>{isHost ? 'Вы транслируете экран' : 'Идет трансляция экрана'}</span>
+          {onStopScreenShare && (
+            <button
+              onClick={onStopScreenShare}
+              className="ml-2 px-2 py-0.5 rounded-md bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold cursor-pointer transition-colors"
+            >
+              Остановить
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Empty State Overlay */}
       {!hasSource && (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#0b0b0e]/95 z-20">
@@ -350,25 +368,25 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {/* Floating overlay: inside player both in fullscreen and windowed mode */}
       {showChatOverlay && children && (
-        <div className={`absolute z-40 flex flex-col pointer-events-auto shadow-2xl rounded-2xl overflow-hidden border border-white/15 bg-black/85 backdrop-blur-md transition-all duration-200 ${
+        <div className={`absolute z-40 flex flex-col pointer-events-auto shadow-2xl rounded-[28px] overflow-hidden border border-[#bf5af2]/35 bg-[#10051c]/90 backdrop-blur-2xl transition-all duration-200 ${
           isFullscreen
             ? 'top-4 right-4 w-80 max-h-[85%]'
             : 'top-3 right-3 sm:top-4 sm:right-4 w-72 sm:w-80 max-h-[82%]'
         }`}>
-          <div className="flex items-center justify-between px-3 py-1.5 bg-[#18181b]/90 border-b border-white/10">
-            <span className="text-[11px] font-semibold text-zinc-300 flex items-center gap-1.5">
-              <MessageSquare className="w-3 h-3 text-purple-400" />
+          <div className="flex items-center justify-between px-3.5 py-2 bg-white/[0.04] border-b border-[#bf5af2]/20">
+            <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5 text-[#da8fff]" />
               Чат трансляции
             </span>
             <button
               onClick={toggleChatOverlay}
-              className="text-zinc-400 hover:text-white p-1 rounded-md text-xs hover:bg-white/10"
+              className="text-zinc-400 hover:text-white p-1 rounded-lg text-xs hover:bg-white/10 transition-colors cursor-pointer"
               title="Закрыть чат в плеере"
             >
               ✕
             </button>
           </div>
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col p-1">
             {children}
           </div>
         </div>

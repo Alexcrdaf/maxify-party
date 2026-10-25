@@ -18,6 +18,7 @@ interface RoomControlsProps {
   roomCode: string;
   isHost: boolean;
   isScreenSharing: boolean;
+  hasActiveScreenStream?: boolean;
   onStartScreenShare: () => void;
   onStopScreenShare: () => void;
   onDirectUrlSubmit: (url: string) => void;
@@ -35,6 +36,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   roomCode,
   isHost,
   isScreenSharing,
+  hasActiveScreenStream = false,
   onStartScreenShare,
   onStopScreenShare,
   onDirectUrlSubmit,
@@ -115,7 +117,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   };
 
   return (
-    <div className="bg-[#18181b] border border-[#2d2d35] rounded-xl p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-lg">
+    <div className="glass-panel p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
       {/* Left controls: Share invite & Video source */}
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <button
@@ -142,17 +144,17 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
       {/* Center controls: Screen share & Microphone */}
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <button
-          onClick={isScreenSharing ? onStopScreenShare : onStartScreenShare}
+          onClick={isScreenSharing || (isHost && hasActiveScreenStream) ? onStopScreenShare : onStartScreenShare}
           className={`btn text-xs px-2 sm:px-3 py-1.5 ${
-            isScreenSharing
+            isScreenSharing || hasActiveScreenStream
               ? 'btn-danger'
               : 'btn-ghost'
           }`}
-          title={isScreenSharing ? 'Остановить захват' : 'Транслировать вкладку со звуком'}
+          title={isScreenSharing || hasActiveScreenStream ? 'Остановить захват и трансляцию экрана' : 'Транслировать вкладку со звуком'}
         >
           <ScreenShare className="w-4 h-4" />
           <span className="hidden sm:inline">
-            {isScreenSharing ? 'Остановить экран' : 'Транслировать вкладку'}
+            {isScreenSharing || hasActiveScreenStream ? 'Остановить трансляцию' : 'Транслировать вкладку'}
           </span>
         </button>
 

@@ -6,12 +6,14 @@ interface ChatPanelProps {
   messages: ChatMessage[];
   currentUserId: string;
   onSendMessage: (text: string, file?: ChatAttachment) => void;
+  hideHeader?: boolean;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
   messages,
   currentUserId,
   onSendMessage,
+  hideHeader = false,
 }) => {
   const [inputText, setInputText] = useState('');
   const [pendingFile, setPendingFile] = useState<ChatAttachment | null>(null);
@@ -82,14 +84,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   };
 
   return (
-    <div className="bg-[#18181b] border border-[#2d2d35] rounded-xl p-3.5 flex flex-col h-full shadow-lg">
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#26262c]">
-        <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400 flex items-center gap-1.5">
-          <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
-          <span>Чат комнаты</span>
-        </h3>
-        <span className="text-[10px] text-zinc-500 font-mono">P2P</span>
-      </div>
+    <div className={`${hideHeader ? 'flex flex-col h-full' : 'glass-panel p-3.5 flex flex-col h-full rounded-[28px] border border-[#bf5af2]/30 shadow-2xl'}`}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#26262c]">
+          <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400 flex items-center gap-1.5">
+            <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
+            <span>Чат комнаты</span>
+          </h3>
+          <span className="text-[10px] text-zinc-500 font-mono">P2P</span>
+        </div>
+      )}
 
       {/* Messages Scrollable List */}
       <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs">

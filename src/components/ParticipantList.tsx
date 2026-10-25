@@ -18,7 +18,7 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
   onKickParticipant,
 }) => {
   return (
-    <div className="bg-[#18181b] border border-[#2d2d35] rounded-xl p-3.5 flex flex-col h-full shadow-lg">
+    <div className="glass-panel p-4 flex flex-col h-full">
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#26262c]">
         <h3 className="text-xs uppercase tracking-wider font-bold text-zinc-400 flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5 text-purple-400" />

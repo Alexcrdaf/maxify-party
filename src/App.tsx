@@ -509,6 +509,7 @@ export function App() {
                     messages={chatMessages}
                     currentUserId={myId}
                     onSendMessage={(text, file) => roomManagerRef.current?.sendChatMessage(text, file)}
+                    hideHeader={true}
                   />
                 </div>
               </VideoPlayer>
@@ -517,6 +518,7 @@ export function App() {
                 roomCode={roomCode}
                 isHost={isHost}
                 isScreenSharing={isScreenSharing}
+                hasActiveScreenStream={Boolean(screenStream)}
                 onStartScreenShare={handleStartScreenShare}
                 onStopScreenShare={handleStopScreenShare}
                 onDirectUrlSubmit={handleDirectUrlSubmit}

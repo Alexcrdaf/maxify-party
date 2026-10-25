@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wifi, WifiOff, Users, Shield } from 'lucide-react';
+import { Wifi, WifiOff, Users, Sparkles, ExternalLink } from 'lucide-react';
 
 interface NavbarProps {
   onGoHome?: () => void;
@@ -17,83 +17,98 @@ export const Navbar: React.FC<NavbarProps> = ({
   connectionStatus = 'disconnected',
 }) => {
   return (
-    <header className="w-full h-14 bg-[#0e0e10]/90 backdrop-blur-md border-b border-[#26262c] sticky top-0 z-50 flex items-center justify-between px-4 sm:px-6">
-      {/* Brand & Left Navigation */}
-      <div className="flex items-center gap-6">
+    <header className="w-full h-16 bg-[#10051c]/70 backdrop-blur-2xl border-b border-[#bf5af2]/20 sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8 transition-all">
+      {/* Brand */}
+      <div className="flex items-center gap-5">
         <button
           type="button"
           onClick={onGoHome}
           aria-label="Maxify — на главную"
-          className="flex items-center gap-2.5 cursor-pointer group bg-transparent border-0 p-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-lg"
+          className="flex items-center gap-3 cursor-pointer group bg-transparent border-0 p-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#bf5af2] rounded-2xl"
         >
-          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-purple-600/20 group-hover:bg-purple-600/30 transition-colors">
+          <div className="relative w-10 h-10 flex items-center justify-center group-hover:scale-105 transition-transform">
             <img
               src="./icon.png"
               alt="Maxify"
-              width="28"
-              height="28"
-              className="w-7 h-7 object-contain"
+              width="40"
+              height="40"
+              className="w-10 h-10 object-contain rounded-[14px] shadow-[0_8px_20px_rgba(168,85,247,0.55)]"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = './icon.png';
               }}
             />
           </div>
-          <span className="text-lg font-bold tracking-tight text-white syne group-hover:text-purple-300 transition-colors">
-            Maxify
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold tracking-tight text-white syne group-hover:text-[#da8fff] transition-colors leading-none drop-shadow-sm">
+              Maxify
+            </span>
+            <span className="text-[10px] uppercase font-semibold text-[#dcbcff]/70 tracking-widest mt-0.5">
+              Watchparty
+            </span>
+          </div>
         </button>
-
-        {/* Section links like Twitch */}
-        <nav className="hidden md:flex items-center gap-1 text-sm font-semibold">
-          <span className="px-3 py-1.5 rounded-md text-white bg-white/10 cursor-default">
-            Совместный просмотр
-          </span>
-        </nav>
       </div>
 
-      {/* Right Actions / Room status */}
+      {/* Right Action Cluster */}
       <div className="flex items-center gap-3">
         {roomCode ? (
           <>
-            {/* Connection Status Badge */}
-            <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
-                connectionStatus === 'connected'
-                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                  : connectionStatus === 'connecting'
-                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse'
-                  : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-              }`}
-            >
-              {connectionStatus === 'connected' ? (
-                <Wifi className="w-3.5 h-3.5" />
-              ) : (
-                <WifiOff className="w-3.5 h-3.5" />
+            {/* Room code pill with iOS liquid styling */}
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.07] border border-[#bf5af2]/30 backdrop-blur-xl text-xs shadow-inner">
+              <span className="text-[#dcbcff]/80 text-[11px]">Комната:</span>
+              <span className="font-mono font-bold tracking-wider text-white bg-gradient-to-r from-[#da8fff] to-[#bf5af2] bg-clip-text text-transparent">
+                {roomCode}
+              </span>
+              {isHost && (
+                <span className="bg-[#bf5af2]/20 text-[#da8fff] px-2 py-0.5 rounded-full text-[10px] font-bold border border-[#bf5af2]/40">
+                  ХОСТ
+                </span>
               )}
-              <span>{connectionStatus === 'connected' ? 'P2P Online' : 'Подключение'}</span>
             </div>
 
-            {/* Room Code Badge */}
-            <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-[#18181b] border border-[#2d2d35] text-xs">
-              <span className="text-zinc-400">Комната</span>
-              <span className="font-mono font-bold text-purple-400 tracking-wider">{roomCode}</span>
-              {isHost ? (
-                <span className="inline-flex items-center gap-1 text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-medium border border-amber-500/30">
-                  <Shield className="w-3 h-3" />
-                  Ведущий
-                </span>
+            {/* Participants counter */}
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10 backdrop-blur-xl text-xs text-[#dcbcff]"
+              title="Участники онлайн"
+            >
+              <Users className="w-3.5 h-3.5 text-[#bf5af2]" />
+              <span className="font-mono font-bold text-white">{participantCount}</span>
+            </div>
+
+            {/* Connection status */}
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10 backdrop-blur-xl text-xs"
+              title={`Статус соединения: ${connectionStatus}`}
+            >
+              {connectionStatus === 'connected' ? (
+                <Wifi className="w-3.5 h-3.5 text-emerald-400" />
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] bg-[#26262c] text-zinc-300 px-1.5 py-0.5 rounded">
-                  <Users className="w-3 h-3" />
-                  {participantCount}
-                </span>
+                <WifiOff className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
               )}
             </div>
           </>
         ) : (
-          <div className="flex items-center gap-2 text-xs text-zinc-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Готов к стриму</span>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-xs font-medium text-[#dcbcff]/90 backdrop-blur-xl">
+              <Sparkles className="w-3.5 h-3.5 text-[#bf5af2]" />
+              <span>WebRTC Direct P2P</span>
+            </div>
+            <a
+              href="https://github.com/Alexcrdaf/syncwave"
+              target="_blank"
+              rel="noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 hover:border-white/20 text-xs font-semibold text-[#dcbcff] hover:text-white transition-all backdrop-blur-xl"
+            >
+              <span>GitHub</span>
+              <ExternalLink className="w-3 h-3 opacity-60" />
+            </a>
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-[#da8fff] to-[#bf5af2] hover:opacity-95 active:scale-95 text-white text-xs font-bold tracking-tight transition-all shadow-lg shadow-[#bf5af2]/35"
+            >
+              Новая комната
+            </button>
           </div>
         )}
       </div>
