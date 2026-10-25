@@ -1,0 +1,19 @@
+<svg width="400" height="250" viewBox="0 0 400 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="400" y2="250" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="50%" stop-color="#022c22"/>
+      <stop offset="100%" stop-color="#061c14"/>
+    </linearGradient>
+    <radialGradient id="aurora" cx="40%" cy="25%" r="60%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#061c14" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="250" fill="url(#bg3)"/>
+  <rect width="400" height="250" fill="url(#aurora)"/>
+  <rect x="20" y="20" width="76" height="22" rx="6" fill="#10b981" fill-opacity="0.9"/>
+  <text x="32" y="35" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="800">TWITCH</text>
+  <text x="24" y="215" fill="#ffffff" font-family="system-ui, sans-serif" font-size="16" font-weight="700">Dota 2 Majors: Финалы</text>
+  <text x="24" y="235" fill="#6ee7b7" font-family="system-ui, sans-serif" font-size="12">Вкладка + Микрофоны • 60 FPS</text>
+</svg>

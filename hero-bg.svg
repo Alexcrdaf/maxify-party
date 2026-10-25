@@ -1,0 +1,26 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#0c0a09"/>
+  <defs>
+    <radialGradient id="ambience1" cx="50%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#854d0e" stop-opacity="0.35"/>
+      <stop offset="45%" stop-color="#451a03" stop-opacity="0.2"/>
+      <stop offset="85%" stop-color="#0c0a09" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0c0a09" stop-opacity="1"/>
+    </radialGradient>
+    <radialGradient id="highlightYellow" cx="80%" cy="15%" r="35%">
+      <stop offset="0%" stop-color="#facc15" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#0c0a09" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="canyonSlope" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#261a14"/>
+      <stop offset="100%" stop-color="#0c0a09"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#ambience1)"/>
+  <rect width="1600" height="900" fill="url(#highlightYellow)"/>
+  
+  <!-- Subtle organic canyon background ridges matching Tripo reference -->
+  <path d="M-50 220 Q 350 380 750 160 T 1650 320 L 1650 900 L -50 900 Z" fill="url(#canyonSlope)" opacity="0.6"/>
+  <path d="M-50 360 Q 450 520 850 280 T 1650 480 L 1650 900 L -50 900 Z" fill="#1c1613" opacity="0.75"/>
+  <path d="M-50 510 Q 400 660 920 440 T 1650 620 L 1650 900 L -50 900 Z" fill="#140f0c" opacity="0.9"/>
+</svg>
