@@ -41,6 +41,17 @@ export function analyzeMediaUrl(inputUrl: string): SourceAnalysis {
     };
   }
 
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return {
+      type: 'invalid',
+      url: trimmed,
+      isEmbeddable: false,
+      requiresScreenShare: false,
+      noticeTitle: 'Небезопасный протокол',
+      noticeDescription: 'Поддерживаются только ссылки http:// и https://',
+    };
+  }
+
   const pathname = parsed.pathname.toLowerCase();
   const hostname = parsed.hostname.toLowerCase();
 

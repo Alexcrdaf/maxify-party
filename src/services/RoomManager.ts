@@ -38,6 +38,9 @@ export class RoomManager {
   private activeVoiceStream: MediaStream | null = null;
   private isScreenSharing: boolean = false;
   private messageCounters: Map<string, { count: number; resetTime: number }> = new Map();
+  private currentHostId: string = '';
+  private participantsMap: Map<string, Participant> = new Map();
+  private lastPlaybackState: PlaybackState | null = null;
 
   constructor(myProfile: Participant, callbacks: RoomCallbacks) {
     this.myProfile = myProfile;
@@ -48,6 +51,7 @@ export class RoomManager {
     this.roomId = roomCode.toUpperCase();
     this.isHost = true;
     const hostPeerId = `syncwave-room-${this.roomId}`;
+    this.currentHostId = hostPeerId;
 
     return new Promise((resolve, reject) => {
       this.callbacks.onConnectionStatusChange('connecting');
@@ -69,6 +73,8 @@ export class RoomManager {
 
       this.peer.on('open', (id) => {
         this.myId = id;
+        this.myProfile = { ...this.myProfile, id };
+        this.participantsMap.set(id, this.myProfile);
         this.callbacks.onConnectionStatusChange('connected');
         this.startHeartbeat();
         this.startServerKeepAlive();
@@ -122,6 +128,7 @@ export class RoomManager {
     this.roomId = roomCode.toUpperCase();
     this.isHost = false;
     const hostPeerId = `syncwave-room-${this.roomId}`;
+    this.currentHostId = hostPeerId;
 
     return new Promise((resolve, reject) => {
       this.callbacks.onConnectionStatusChange('connecting');
@@ -141,11 +148,20 @@ export class RoomManager {
 
       // By providing an explicit alphanumeric ID, PeerJS skips the HTTP retrieveId() call (fetch to 0.peerjs.com/peerjs/id)
       // which is frequently blocked or filtered by ISPs in the Russian Federation (РФ) and causes 'server-error'.
-      const guestPeerId = `syncwave-guest-${this.roomId}-${Math.random().toString(36).substring(2, 9)}`;
+      let suffix = '';
+      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        const buf = new Uint8Array(6);
+        crypto.getRandomValues(buf);
+        suffix = Array.from(buf, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 8);
+      } else {
+        suffix = Math.random().toString(36).substring(2, 10);
+      }
+      const guestPeerId = `syncwave-guest-${this.roomId}-${suffix}`;
       this.peer = new Peer(guestPeerId, peerOptions);
 
       this.peer.on('open', (id) => {
         this.myId = id;
+        this.myProfile = { ...this.myProfile, id };
 
         const conn = this.peer!.connect(hostPeerId, {
           reliable: true,
@@ -267,7 +283,7 @@ export class RoomManager {
         existingCall.off('close');
         existingCall.off('stream');
         existingCall.close();
-      } catch (_) {}
+      } catch {}
       this.mediaCalls.delete(callKey);
     }
 
@@ -298,7 +314,7 @@ export class RoomManager {
               };
               setTimeout(applyBitrateLimit, 500);
             }
-          } catch (_) {}
+          } catch {}
         }
 
         call.on('close', () => {
@@ -325,7 +341,7 @@ export class RoomManager {
         existingCall.off('close');
         existingCall.off('stream');
         existingCall.close();
-      } catch (_) {}
+      } catch {}
       this.mediaCalls.delete(callKey);
     }
 
@@ -382,8 +398,7 @@ export class RoomManager {
       return;
     }
 
-    const hostPeerId = `syncwave-room-${this.roomId}`;
-    const isFromHost = conn.peer === hostPeerId || conn.peer === this.myId;
+    const isFromHost = conn.peer === this.currentHostId || conn.peer === this.myId;
 
     switch (msg.type) {
       case 'join_request': {
@@ -394,9 +409,10 @@ export class RoomManager {
             role: 'viewer',
             connectedAt: Date.now(),
           };
+          this.participantsMap.set(conn.peer, participant);
           this.callbacks.onParticipantJoined(participant);
 
-          // Send full room state back to the newly connected participant
+          // Send full room state (all participants + current playbackState) back to the newly connected participant
           conn.send({
             type: 'room_state',
             roomId: this.roomId,
@@ -405,6 +421,8 @@ export class RoomManager {
               isScreenSharing: Boolean(this.activeLocalStream && this.isScreenSharing),
               hostId: this.myId,
               hostProfile: this.myProfile,
+              participants: Array.from(this.participantsMap.values()),
+              playbackState: this.lastPlaybackState,
             },
             timestamp: Date.now(),
           } as SignalingMessage);
@@ -412,14 +430,18 @@ export class RoomManager {
           // If host is screen sharing, call the new participant with a small delay to ensure peer is ready
           if (this.activeLocalStream && this.isScreenSharing) {
             setTimeout(() => {
-              this.callPeerWithStream(conn.peer, this.activeLocalStream!, true);
+              if (this.activeLocalStream && this.isScreenSharing) {
+                this.callPeerWithStream(conn.peer, this.activeLocalStream, true);
+              }
             }, 300);
           }
 
           // If host has active voice, connect voice stream to the new participant as well
           if (this.activeVoiceStream) {
             setTimeout(() => {
-              this.callPeerWithStream(conn.peer, this.activeVoiceStream!, false);
+              if (this.activeVoiceStream) {
+                this.callPeerWithStream(conn.peer, this.activeVoiceStream, false);
+              }
             }, 500);
           }
 
@@ -439,8 +461,20 @@ export class RoomManager {
       }
 
       case 'room_state': {
-        if (msg.payload?.hostProfile) {
+        if (msg.payload?.hostId) {
+          this.currentHostId = msg.payload.hostId;
+        }
+        if (Array.isArray(msg.payload?.participants)) {
+          msg.payload.participants.forEach((p: Participant) => {
+            this.participantsMap.set(p.id, p);
+            this.callbacks.onParticipantJoined(p);
+          });
+        } else if (msg.payload?.hostProfile) {
           this.callbacks.onParticipantJoined(msg.payload.hostProfile);
+        }
+        if (msg.payload?.playbackState) {
+          this.lastPlaybackState = msg.payload.playbackState;
+          this.callbacks.onPlaybackSync(msg.payload.playbackState);
         }
         break;
       }
@@ -465,10 +499,14 @@ export class RoomManager {
       }
 
       case 'participant_joined':
+        if (msg.payload?.id) {
+          this.participantsMap.set(msg.payload.id, msg.payload);
+        }
         this.callbacks.onParticipantJoined(msg.payload);
         break;
 
       case 'participant_left':
+        this.participantsMap.delete(msg.payload.participantId);
         this.callbacks.onParticipantLeft(msg.payload.participantId);
         break;
 
@@ -478,6 +516,7 @@ export class RoomManager {
           console.warn('Playback sync ignored from non-host peer:', conn.peer);
           return;
         }
+        this.lastPlaybackState = msg.payload;
         this.callbacks.onPlaybackSync(msg.payload);
         if (this.isHost) {
           this.broadcast(msg, msg.senderId);
@@ -508,10 +547,12 @@ export class RoomManager {
           console.warn('Unauthorized transfer_host attempt from:', conn.peer);
           return;
         }
+        this.currentHostId = msg.payload.newHostId;
         if (msg.payload.newHostId === this.myId) {
           this.isHost = true;
           this.callbacks.onHostTransferred(this.myId);
         } else {
+          this.isHost = false;
           this.callbacks.onHostTransferred(msg.payload.newHostId);
         }
         break;
@@ -529,6 +570,9 @@ export class RoomManager {
         break;
 
       case 'participant_update':
+        if (msg.payload?.id) {
+          this.participantsMap.set(msg.payload.id, msg.payload);
+        }
         this.callbacks.onParticipantUpdated(msg.payload);
         if (this.isHost) {
           this.broadcast(msg, msg.senderId);
@@ -556,6 +600,7 @@ export class RoomManager {
   }
 
   public sendPlaybackSync(state: PlaybackState) {
+    this.lastPlaybackState = state;
     const msg: SignalingMessage = {
       type: 'playback_sync',
       roomId: this.roomId,
@@ -567,7 +612,36 @@ export class RoomManager {
     if (this.isHost) {
       this.broadcast(msg);
     } else {
-      const hostConn = this.connections.get(`syncwave-room-${this.roomId}`);
+      const hostConn = this.connections.get(this.currentHostId || `syncwave-room-${this.roomId}`);
+      if (hostConn && hostConn.open) {
+        hostConn.send(msg);
+      }
+    }
+  }
+
+  public updateMyProfile(partial: Partial<Participant>) {
+    this.myProfile = {
+      ...this.myProfile,
+      ...partial,
+      id: this.myId || this.myProfile.id,
+    };
+    if (this.myProfile.id) {
+      this.participantsMap.set(this.myProfile.id, this.myProfile);
+      this.callbacks.onParticipantUpdated(this.myProfile);
+    }
+
+    const msg: SignalingMessage = {
+      type: 'participant_update',
+      roomId: this.roomId,
+      senderId: this.myId,
+      payload: this.myProfile,
+      timestamp: Date.now(),
+    };
+
+    if (this.isHost) {
+      this.broadcast(msg);
+    } else {
+      const hostConn = this.connections.get(this.currentHostId || `syncwave-room-${this.roomId}`);
       if (hostConn && hostConn.open) {
         hostConn.send(msg);
       }
@@ -633,7 +707,7 @@ export class RoomManager {
       if (this.mediaCalls.has(callKey)) {
         try {
           this.mediaCalls.get(callKey)?.close();
-        } catch (_) {}
+        } catch {}
         this.mediaCalls.delete(callKey);
       }
     });
@@ -675,7 +749,7 @@ export class RoomManager {
         if (this.mediaCalls.has(callKey)) {
           try {
             this.mediaCalls.get(callKey)?.close();
-          } catch (_) {}
+          } catch {}
           this.mediaCalls.delete(callKey);
         }
       });
@@ -766,7 +840,7 @@ export class RoomManager {
             if (socket && typeof socket._send === 'function') {
               socket._send({ type: 'HEARTBEAT' });
             }
-          } catch (_) {}
+          } catch {}
         }
       }
     }, 25000); // Send keep-alive every 25 seconds
@@ -781,6 +855,9 @@ export class RoomManager {
     this.connections.clear();
     this.mediaCalls.forEach((call) => call.close());
     this.mediaCalls.clear();
+    this.messageCounters.clear();
+    this.participantsMap.clear();
+    this.lastPlaybackState = null;
     if (this.peer) {
       this.peer.destroy();
       this.peer = null;

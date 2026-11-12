@@ -13,6 +13,7 @@ import {
   MessageSquare,
   MessageSquareOff,
   ScreenShare,
+  X,
 } from 'lucide-react';
 import type { PlaybackState } from '../types';
 import { APP_CONFIG } from '../config';
@@ -56,55 +57,67 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const showChatOverlay = isChatOpenInPlayer !== undefined ? isChatOpenInPlayer : localShowChatOverlay;
   const toggleChatOverlay = onToggleInPlayerChat || (() => setLocalShowChatOverlay((prev) => !prev));
 
-  // Bind screenStream if available
+  // Sync fullscreen state when user exits via Esc
   useEffect(() => {
-    if (videoRef.current && screenStream) {
-      videoRef.current.srcObject = screenStream;
-      // Host should be muted locally to avoid hearing their own tab echo,
-      // but viewers MUST be unmuted so they can hear the screen/tab audio.
-      if (isHost && screenStream.getVideoTracks()[0]?.readyState === 'live') {
-        videoRef.current.muted = true;
-      } else {
-        videoRef.current.muted = isMuted;
-        videoRef.current.volume = volume;
-      }
-      videoRef.current.play().catch((err) => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Bind screenStream only when stream or host role changes (never on volume/mute changes)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (screenStream) {
+      video.srcObject = screenStream;
+      video.play().catch((err) => {
         console.warn('Autoplay screen stream prevented:', err);
       });
-    } else if (videoRef.current && !screenStream) {
-      videoRef.current.srcObject = null;
-      videoRef.current.muted = isMuted;
-      videoRef.current.volume = volume;
+    } else {
+      video.srcObject = null;
+    }
+  }, [screenStream]);
+
+  // Apply volume & mute independently without interrupting stream playback
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (screenStream && isHost && screenStream.getVideoTracks()[0]?.readyState === 'live') {
+      // Host stays muted locally to prevent tab audio echo
+      video.muted = true;
+    } else {
+      video.muted = isMuted;
+      video.volume = volume;
     }
   }, [screenStream, isHost, isMuted, volume]);
 
-  // Sync incoming state from RoomManager
+  // Sync incoming playbackState from RoomManager
   useEffect(() => {
     if (!videoRef.current || screenStream) return;
 
     const video = videoRef.current;
     isSyncingRef.current = true;
 
-    // Source change
     if (playbackState.sourceUrl && video.src !== playbackState.sourceUrl) {
       video.src = playbackState.sourceUrl;
       video.load();
     }
 
-    // Play/Pause sync
     if (playbackState.isPlaying && video.paused) {
       video.play().catch(() => {});
     } else if (!playbackState.isPlaying && !video.paused) {
       video.pause();
     }
 
-    // Time seek sync with threshold
     const timeDiff = Math.abs(video.currentTime - playbackState.currentTime);
     if (timeDiff > APP_CONFIG.syncThresholdSeconds) {
       video.currentTime = playbackState.currentTime;
     }
 
-    // Rate sync
     if (playbackState.playbackRate && video.playbackRate !== playbackState.playbackRate) {
       video.playbackRate = playbackState.playbackRate;
     }
@@ -118,7 +131,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => clearTimeout(timer);
   }, [playbackState, screenStream]);
 
-  // HTML5 Video Event Handlers
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime);
@@ -178,10 +190,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
     } else {
       document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
     }
   };
 
@@ -197,7 +207,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden bg-black aspect-video rounded-2xl border border-[#2d2d35] flex items-center justify-center group shadow-2xl"
+      className="relative overflow-hidden bg-black aspect-video rounded-[24px] border border-white/[0.11] flex items-center justify-center group shadow-[0_24px_60px_rgba(0,0,0,0.65)] animate-ios-spring"
     >
       {/* Video Element */}
       <video
@@ -207,63 +217,78 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => setIsPlaying(false)}
+        onClick={hasSource && !screenStream ? togglePlay : undefined}
         className="w-full h-full object-contain bg-black"
       />
 
-      {/* Screen Sharing Active Bar Overlay */}
+      {/* Screen Sharing Live Dynamic Pill */}
       {screenStream && (
-        <div className="absolute top-4 left-4 z-30 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-600/90 text-white text-xs font-semibold backdrop-blur-md shadow-lg border border-red-400/40 animate-pulse">
-          <ScreenShare className="w-3.5 h-3.5" />
-          <span>{isHost ? 'Вы транслируете экран' : 'Идет трансляция экрана'}</span>
+        <div className="animate-ios-pop absolute top-3.5 left-3.5 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1C1C1E]/85 text-white text-xs font-medium backdrop-blur-2xl shadow-lg border border-white/[0.14]">
+          <span className="w-2 h-2 rounded-full bg-[#FF453A] animate-pulse" />
+          <ScreenShare className="w-3.5 h-3.5 text-white/80" />
+          <span>{isHost ? 'Ваш экран в эфире' : 'Трансляция экрана'}</span>
           {onStopScreenShare && (
             <button
+              type="button"
               onClick={onStopScreenShare}
-              className="ml-2 px-2 py-0.5 rounded-md bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold cursor-pointer transition-colors"
+              className="ios-press ml-1 px-2.5 py-0.5 rounded-full bg-[#FF453A] hover:bg-[#FF6961] text-white text-[11px] font-semibold cursor-pointer"
             >
-              Остановить
+              Стоп
             </button>
           )}
         </div>
       )}
 
-      {/* Empty State Overlay */}
+      {/* Empty State */}
       {!hasSource && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#0b0b0e]/95 z-20">
-          <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400 mb-3.5">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#111114] to-black z-20">
+          <div className="w-14 h-14 rounded-[18px] bg-white/[0.07] border border-white/[0.12] flex items-center justify-center text-[#0A84FF] mb-4 shadow-inner">
             <Film className="w-7 h-7" />
           </div>
-          <h3 className="text-base font-bold text-white mb-1.5">Экран совместного просмотра</h3>
-          <p className="text-xs text-zinc-400 max-w-sm mb-5 leading-relaxed">
-            Запустите трансляцию вкладки браузера со звуком или выберите тестовое видео.
+          <h3 className="text-[17px] font-semibold text-white sf-display mb-1.5">
+            Экран совместного просмотра
+          </h3>
+          <p className="text-[13px] text-white/55 max-w-sm mb-5 leading-relaxed">
+            Запустите трансляцию вкладки со звуком на панели ниже или откройте видео по прямой ссылке.
           </p>
           {isHost && (
             <button
-              onClick={() => onUpdateState({ sourceUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', isPlaying: false })}
-              className="py-2.5 px-5 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-semibold text-xs rounded-xl transition-all shadow-md"
+              type="button"
+              onClick={() =>
+                onUpdateState({
+                  sourceUrl:
+                    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                  sourceType: 'direct_video',
+                  currentTime: 0,
+                  isPlaying: false,
+                })
+              }
+              className="ios-press py-2.5 px-5 rounded-full bg-[#0A84FF] hover:brightness-110 text-white font-semibold text-xs shadow-[0_8px_20px_rgba(10,132,255,0.35)] cursor-pointer"
             >
-              Запустить демо (Big Buck Bunny 1080p)
+              Запустить демо (Big Buck Bunny)
             </button>
           )}
         </div>
       )}
 
-      {/* External platform notice (e.g. DRM / CSP) */}
+      {/* External platform notice */}
       {externalNotice && (
-        <div className="absolute top-4 left-4 right-4 z-30 p-3 rounded-2xl bg-slate-900/90 border border-amber-500/30 text-xs text-amber-200 flex items-start gap-2.5 backdrop-blur-md shadow-lg">
+        <div className="animate-ios-toast absolute top-4 left-4 right-4 z-30 p-3.5 rounded-[18px] ios-material-elevated text-xs text-white/85 flex items-start gap-3">
+          <div className="w-2 h-2 rounded-full bg-[#FFD60A] mt-1.5 shrink-0" />
           <div className="flex-1">
             <span className="font-semibold text-white block mb-0.5">{externalNotice.title}</span>
-            <span>{externalNotice.description}</span>
+            <span className="text-white/65 leading-relaxed">{externalNotice.description}</span>
           </div>
         </div>
       )}
 
-      {/* Video Controls Bar Overlay */}
+      {/* Apple TV / iOS 17 Floating Video Controls */}
       {hasSource && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30 flex flex-col gap-2.5">
-          {/* Progress Seekbar (disabled when screen sharing) */}
+        <div className="absolute bottom-3 inset-x-3 sm:bottom-4 sm:inset-x-4 rounded-[20px] ios-material-elevated px-3.5 py-2.5 sm:px-4 sm:py-3 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-250 z-30 flex flex-col gap-2">
+          {/* Seekbar */}
           {!screenStream && (
             <div className="flex items-center gap-3">
-              <span className="text-[11px] font-mono text-slate-300 w-10 text-right">
+              <span className="text-[11px] font-mono tabular-nums text-white/75 w-10 text-right">
                 {formatTime(currentTime)}
               </span>
               <input
@@ -272,36 +297,43 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 max={duration || 100}
                 value={currentTime}
                 onChange={(e) => handleSeek(Number(e.target.value))}
-                className="flex-1"
+                className="ios-slider flex-1"
               />
-              <span className="text-[11px] font-mono text-slate-400 w-10">
+              <span className="text-[11px] font-mono tabular-nums text-white/50 w-10">
                 {formatTime(duration)}
               </span>
             </div>
           )}
 
-          {/* Bottom buttons row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          {/* Controls row */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {!screenStream && (
                 <>
                   <button
+                    type="button"
                     onClick={togglePlay}
-                    className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center hover:bg-sky-400 transition-colors"
+                    className="ios-press w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white text-black flex items-center justify-center hover:bg-white/90 cursor-pointer"
                     title={isPlaying ? 'Пауза' : 'Воспроизведение'}
                   >
-                    {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+                    {isPlaying ? (
+                      <Pause className="w-4 h-4 fill-current" />
+                    ) : (
+                      <Play className="w-4 h-4 fill-current ml-0.5" />
+                    )}
                   </button>
                   <button
+                    type="button"
                     onClick={() => seekRelative(-10)}
-                    className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-xs border border-white/10"
+                    className="ios-press p-2 rounded-full bg-white/[0.08] hover:bg-white/[0.16] text-white/85 cursor-pointer"
                     title="Назад 10 секунд"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => seekRelative(10)}
-                    className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-xs border border-white/10"
+                    className="ios-press p-2 rounded-full bg-white/[0.08] hover:bg-white/[0.16] text-white/85 cursor-pointer"
                     title="Вперёд 10 секунд"
                   >
                     <RotateCw className="w-3.5 h-3.5" />
@@ -310,9 +342,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               )}
 
               {/* Volume */}
-              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-white/10">
-                <button onClick={toggleMute} className="text-slate-300 hover:text-white">
-                  {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/[0.08]">
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  className="ios-press text-white/80 hover:text-white cursor-pointer"
+                  title={isMuted ? 'Включить звук' : 'Выключить звук'}
+                >
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="w-4 h-4" />
+                  ) : (
+                    <Volume2 className="w-4 h-4" />
+                  )}
                 </button>
                 <input
                   type="range"
@@ -321,74 +362,85 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   step="0.05"
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                  className="w-16"
+                  className="ios-slider w-14 sm:w-16"
                 />
               </div>
             </div>
 
-            {/* Right side buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {children && (
                 <button
+                  type="button"
                   onClick={toggleChatOverlay}
-                  className={`p-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors border ${
+                  className={`ios-press px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 cursor-pointer ${
                     showChatOverlay
-                      ? 'bg-purple-600/90 text-white border-purple-400/50 shadow-md'
-                      : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border-white/10'
+                      ? 'bg-[#0A84FF] text-white'
+                      : 'bg-white/[0.1] hover:bg-white/[0.18] text-white/85'
                   }`}
-                  title={showChatOverlay ? 'Скрыть чат в плеере' : 'Открыть чат прямо в плеере'}
+                  title={showChatOverlay ? 'Скрыть чат в плеере' : 'Открыть чат в плеере'}
                 >
-                  {showChatOverlay ? <MessageSquareOff className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
-                  <span className="hidden sm:inline">{showChatOverlay ? 'Чат (вкл)' : 'Чат в видео'}</span>
+                  {showChatOverlay ? (
+                    <MessageSquareOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <MessageSquare className="w-3.5 h-3.5" />
+                  )}
+                  <span className="hidden sm:inline">{showChatOverlay ? 'Скрыть чат' : 'Чат'}</span>
                 </button>
               )}
 
               {onRequestScreenStream && !isHost && (
                 <button
+                  type="button"
                   onClick={onRequestScreenStream}
-                  className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-sky-300 hover:text-white border border-sky-500/30 text-xs flex items-center gap-1.5 transition-colors"
+                  className="ios-press px-3 py-1.5 rounded-full bg-white/[0.1] hover:bg-white/[0.18] text-[#5AC8FA] text-xs font-medium flex items-center gap-1.5 cursor-pointer"
                   title="Переподключить поток демонстрации"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Обновить видеопоток</span>
+                  <span className="hidden sm:inline">Обновить</span>
                 </button>
               )}
 
               <button
+                type="button"
                 onClick={toggleFullscreen}
-                className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10"
+                className="ios-press p-2 rounded-full bg-white/[0.1] hover:bg-white/[0.18] text-white/85 cursor-pointer"
                 title="Полноэкранный режим"
               >
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isFullscreen ? (
+                  <Minimize2 className="w-4 h-4" />
+                ) : (
+                  <Maximize2 className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Floating overlay: inside player both in fullscreen and windowed mode */}
+      {/* Unified Single-Header iOS Floating Chat Overlay */}
       {showChatOverlay && children && (
-        <div className={`absolute z-40 flex flex-col pointer-events-auto shadow-2xl rounded-[28px] overflow-hidden border border-[#bf5af2]/35 bg-[#10051c]/90 backdrop-blur-2xl transition-all duration-200 ${
-          isFullscreen
-            ? 'top-4 right-4 w-80 max-h-[85%]'
-            : 'top-3 right-3 sm:top-4 sm:right-4 w-72 sm:w-80 max-h-[82%]'
-        }`}>
-          <div className="flex items-center justify-between px-3.5 py-2 bg-white/[0.04] border-b border-[#bf5af2]/20">
-            <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5 text-[#da8fff]" />
-              Чат трансляции
+        <div
+          className={`animate-ios-pop absolute z-40 flex flex-col pointer-events-auto rounded-[24px] overflow-hidden ios-material-elevated ${
+            isFullscreen
+              ? 'top-4 right-4 w-80 max-h-[85%]'
+              : 'top-3 right-3 sm:top-4 sm:right-4 w-72 sm:w-80 max-h-[82%]'
+          }`}
+        >
+          <div className="flex items-center justify-between px-4 py-2.5 bg-white/[0.04] border-b border-white/[0.08]">
+            <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5 text-[#0A84FF]" />
+              <span>Чат трансляции</span>
             </span>
             <button
+              type="button"
               onClick={toggleChatOverlay}
-              className="text-zinc-400 hover:text-white p-1 rounded-lg text-xs hover:bg-white/10 transition-colors cursor-pointer"
-              title="Закрыть чат в плеере"
+              className="ios-press text-white/55 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              title="Закрыть чат"
             >
-              ✕
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="flex-1 overflow-hidden flex flex-col p-1">
-            {children}
-          </div>
+          <div className="flex-1 overflow-hidden flex flex-col">{children}</div>
         </div>
       )}
     </div>

@@ -2,340 +2,315 @@
 
 @layer base {
   :root {
-    --bg-base: #10051c;
-    --panel: rgba(24, 10, 40, 0.55);
-    --panel-solid: #180a28;
-    --accent: #BF5AF2;
-    --accent-grad: linear-gradient(135deg, #DA8FFF 0%, #BF5AF2 100%);
-    --glow: rgba(191, 90, 242, 0.35);
-    --text: #ffffff;
-    --text-primary: rgba(255, 255, 255, 0.95);
-    --muted: rgba(220, 200, 255, 0.65);
-    --danger: #FF453A;
-    --danger-grad: linear-gradient(135deg, #FF6961 0%, #FF453A 100%);
-    --ok: #32D74B;
-    --panel-radius: 28px;
-    --border: rgba(191, 90, 242, 0.22);
-    --border-light: rgba(191, 90, 242, 0.38);
-    --border-inset: inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
-    --shadow-glass: 0 16px 40px rgba(10, 2, 20, 0.45);
-    --glass-blur: blur(40px) saturate(250%);
-    --glass-shine: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 45%);
-    --mesh-1: rgba(191, 90, 242, 0.35);
-    --mesh-2: rgba(94, 92, 230, 0.3);
-    --mesh-3: rgba(255, 105, 180, 0.2);
-    --input-bg: rgba(255, 255, 255, 0.06);
-    --bubble-mine: var(--accent-grad);
-    --bubble-mine-shadow: 0 4px 14px rgba(191, 90, 242, 0.35);
-    --bubble-their: rgba(34, 14, 56, 0.65);
-    --bubble-their-border: rgba(255, 255, 255, 0.12);
+    --ios-bg: #000000;
+    --ios-surface: rgba(28, 28, 30, 0.72);
+    --ios-surface-elevated: rgba(36, 36, 40, 0.86);
+    --ios-surface-thin: rgba(44, 44, 46, 0.48);
+    --ios-border: rgba(255, 255, 255, 0.11);
+    --ios-border-strong: rgba(255, 255, 255, 0.18);
+    --ios-specular: inset 0 0.5px 0 rgba(255, 255, 255, 0.24);
+    --ios-blue: #0A84FF;
+    --ios-indigo: #5E5CE6;
+    --ios-purple: #BF5AF2;
+    --ios-green: #30D158;
+    --ios-red: #FF453A;
+    --ios-amber: #FFD60A;
+    --ios-label: #FFFFFF;
+    --ios-label-secondary: rgba(235, 235, 245, 0.64);
+    --ios-label-tertiary: rgba(235, 235, 245, 0.36);
+
+    /* iOS 17 ProMotion 120Hz Spring Curves */
+    --spring-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+    --spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --spring-decel: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  body.glass-enabled {
-    --glass-blur: blur(40px) saturate(250%) !important;
-    --panel: rgba(24, 10, 40, 0.55) !important;
-    --border: rgba(191, 90, 242, 0.25) !important;
-    --border-light: rgba(191, 90, 242, 0.4) !important;
-    --border-inset: inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(0, 0, 0, 0.3) !important;
-    --shadow-glass: 0 16px 40px rgba(10, 2, 20, 0.45) !important;
-    --glass-shine: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 45%) !important;
-    --mesh-1: rgba(191, 90, 242, 0.35) !important;
-    --mesh-2: rgba(94, 92, 230, 0.3) !important;
-    --mesh-3: rgba(255, 105, 180, 0.2) !important;
-  }
-
-  body.glass-enabled.purple {
-    --bg-base: #0e0e10 !important;
-    --mesh-1: rgba(145, 71, 255, 0.22) !important;
-    --mesh-2: rgba(80, 40, 160, 0.18) !important;
-    --mesh-3: rgba(120, 50, 220, 0.12) !important;
-  }
-
-  body {
-    background-color: var(--bg-base);
-    color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  html, body {
+    background-color: var(--ios-bg);
+    color: var(--ios-label);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
     position: relative;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Typography from reference */
-.syne {
-  font-family: 'Fredoka', 'Comfortaa', sans-serif !important;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+/* Apple Display Typography */
+.sf-display {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  letter-spacing: -0.025em;
 }
 
-/* Liquid Glass Animated Mesh Blobs */
-body::before,
-body::after {
-  content: "";
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle iOS 17 Ambient Wallpaper Mesh (Deep Apple Indigo / Midnight) */
+.ios-wallpaper {
   position: fixed;
-  inset: -20%;
+  inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(circle at 20% 30%, var(--mesh-1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, var(--mesh-2) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, var(--mesh-3) 0%, transparent 60%);
-  filter: blur(65px);
-  animation: liquidBg 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0.75;
+  overflow: hidden;
   pointer-events: none;
+  background: radial-gradient(circle at 50% 0%, #141229 0%, #050508 55%, #000000 100%);
+}
+
+.ios-wallpaper::before,
+.ios-wallpaper::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(110px);
+  opacity: 0.42;
   will-change: transform;
 }
 
-body::after {
-  background:
-    radial-gradient(circle at 80% 20%, var(--mesh-1) 0%, transparent 40%),
-    radial-gradient(circle at 20% 80%, var(--mesh-3) 0%, transparent 50%);
-  animation: liquidBg 20s infinite alternate-reverse cubic-bezier(0.4, 0, 0.2, 1);
+.ios-wallpaper::before {
+  width: 65vw;
+  height: 65vw;
+  max-width: 780px;
+  max-height: 780px;
+  top: -18%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(94, 92, 230, 0.55), rgba(191, 90, 242, 0.22) 60%, transparent 75%);
+  animation: iosAmbientDrift 22s var(--spring-decel) infinite alternate;
 }
 
-@keyframes liquidBg {
+.ios-wallpaper::after {
+  width: 55vw;
+  height: 55vw;
+  max-width: 680px;
+  max-height: 680px;
+  bottom: -15%;
+  right: -8%;
+  background: radial-gradient(circle, rgba(10, 132, 255, 0.42), rgba(94, 92, 230, 0.18) 60%, transparent 75%);
+  animation: iosAmbientDrift 28s var(--spring-decel) infinite alternate-reverse;
+}
+
+@keyframes iosAmbientDrift {
   0% {
-    transform: scale(1) translate(0, 0) rotate(0deg);
-  }
-  50% {
-    transform: scale(1.14) translate(3%, 4%) rotate(4deg);
+    transform: translate3d(0, 0, 0) scale(1);
   }
   100% {
-    transform: scale(1.05) translate(-3%, -2%) rotate(-4deg);
+    transform: translate3d(4%, 6%, 0) scale(1.08);
   }
 }
 
-/* Pure Maxify Liquid Glass Panels with SVG Displacement Map & Highlights */
-.glass,
-.glass-panel,
-.glass-card {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  padding: 24px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(20, 8, 36, 0.65) !important;
-  backdrop-filter: blur(24px) saturate(200%);
-  -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border-radius: 36px;
-  border: 1px solid rgba(191, 90, 242, 0.28) !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 16px 40px rgba(10, 2, 20, 0.5) !important;
-  color: #fff;
+/* iOS 17 System Materials */
+.ios-material {
+  background: var(--ios-surface);
+  backdrop-filter: blur(40px) saturate(190%);
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  border: 1px solid var(--ios-border);
+  box-shadow: var(--ios-specular), 0 20px 48px rgba(0, 0, 0, 0.48);
 }
 
-.glass::before,
-.glass-panel::before,
-.glass-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 320 320%27><defs><radialGradient id=%27lg-hl%27 cx=%2750%%27 cy=%2750%%27 r=%2750%%27><stop offset=%270%%27 stop-color=%27%23ffffff%27 stop-opacity=%270.15%27/><stop offset=%2760%%27 stop-color=%27%23ffffff%27 stop-opacity=%270.03%27/><stop offset=%27100%%27 stop-color=%27%23ffffff%27 stop-opacity=%270%27/></radialGradient></defs><circle cx=%27160%27 cy=%27160%27 r=%27160%27 fill=%27url(%23lg-hl)%27/></svg>");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  filter: blur(25px);
-  opacity: 0.8;
-  mix-blend-mode: screen;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
+.ios-material-thin {
+  background: var(--ios-surface-thin);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--ios-specular), 0 8px 24px rgba(0, 0, 0, 0.32);
 }
 
-.glass::after,
-.glass-panel::after,
-.glass-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: none;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1;
-  border-radius: inherit;
+.ios-material-elevated {
+  background: var(--ios-surface-elevated);
+  backdrop-filter: blur(50px) saturate(210%);
+  -webkit-backdrop-filter: blur(50px) saturate(210%);
+  border: 1px solid var(--ios-border-strong);
+  box-shadow: var(--ios-specular), 0 28px 70px rgba(0, 0, 0, 0.68);
 }
 
-.glass > *,
-.glass-panel > *,
-.glass-card > * {
-  position: relative;
-  z-index: 2;
-}
-
-.glass-panel-subtle {
-  position: relative;
-  background: var(--glass-shine), rgba(12, 30, 52, 0.4) !important;
-  backdrop-filter: blur(20px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 8px 24px rgba(0, 0, 0, 0.25) !important;
-  border-radius: 22px;
-}
-
-/* Authentic Liquid Glass Buttons from reference style.css */
-.btn {
-  font-family: inherit;
-  font-weight: 600;
-  border-radius: 20px;
-  padding: 12px 20px;
-  font-size: 14px;
-  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
-  letter-spacing: 0.01em;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+/* Tactile iOS 17 Press Physics */
+.ios-press {
+  transition: transform 220ms var(--spring-fluid), background-color 200ms ease, opacity 200ms ease, box-shadow 220ms var(--spring-fluid);
+  will-change: transform;
   user-select: none;
+  -webkit-user-select: none;
   touch-action: manipulation;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
 }
 
-.btn:active {
-  transform: scale(0.96);
+.ios-press:active:not(:disabled) {
+  transform: scale(0.955);
 }
 
-/* Primary Glass Button */
-.btn-primary {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
-  color: #081120 !important;
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+/* iOS 17 Spring Entrance Animations */
+@keyframes iosSpringIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
-.btn-primary:hover {
-  background: linear-gradient(135deg, #ffffff 0%, #38bdf8 50%, #ffffff 100%) !important;
-  background-size: 200% 200% !important;
-  animation: btnGradientShift 1.5s ease infinite !important;
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.6), 0 8px 24px rgba(56, 189, 248, 0.35), inset 0 1px 1px #ffffff !important;
-  color: #040814 !important;
+@keyframes iosPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-/* Accent Cyan/Blue Gradient Button */
-.btn-accent {
-  background: var(--accent-grad) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 8px 24px rgba(10, 132, 255, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+@keyframes iosSheetUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 48px, 0) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
-.btn-accent:hover {
-  box-shadow: 0 0 25px rgba(10, 132, 255, 0.7), 0 8px 28px rgba(10, 132, 255, 0.5) !important;
-  filter: brightness(1.1);
+@keyframes iosToastDrop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -24px, 0) scale(0.86);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
-/* Translucent Frosted Glass Ghost Button */
-.btn-ghost {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)) !important;
-  backdrop-filter: blur(14px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(200%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  color: #ffffff !important;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+@keyframes iosMessageIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
-.btn-ghost:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(10, 132, 255, 0.25) 50%, rgba(255, 255, 255, 0.08) 100%) !important;
-  background-size: 200% 200% !important;
-  animation: btnGradientShift 2s linear infinite !important;
-  border-color: rgba(10, 132, 255, 0.5) !important;
-  box-shadow: 0 0 15px rgba(10, 132, 255, 0.4), 0 6px 18px rgba(0, 0, 0, 0.22) !important;
+@keyframes iosSpeakingPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(48, 209, 88, 0);
+  }
 }
 
-/* Danger Button */
-.btn-danger {
-  background: rgba(255, 69, 58, 0.25) !important;
-  border: 1px solid rgba(255, 69, 58, 0.45) !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(255, 69, 58, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+.animate-ios-spring {
+  animation: iosSpringIn 480ms var(--spring-fluid) both;
 }
 
-.btn-danger:hover {
-  background: linear-gradient(135deg, rgba(255, 69, 58, 0.3) 0%, rgba(255, 69, 58, 0.55) 50%, rgba(255, 69, 58, 0.3) 100%) !important;
-  box-shadow: 0 0 18px rgba(255, 69, 58, 0.5) !important;
+.animate-ios-pop {
+  animation: iosPopIn 360ms var(--spring-bouncy) both;
 }
 
-@keyframes btnGradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.animate-ios-sheet {
+  animation: iosSheetUp 420ms var(--spring-fluid) both;
 }
 
-/* Chat Bubbles from reference */
-.bubble-mine {
-  background: var(--bubble-mine) !important;
-  color: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 20px 20px 4px 20px !important;
-  box-shadow: var(--bubble-mine-shadow) !important;
+.animate-ios-toast {
+  animation: iosToastDrop 420ms var(--spring-bouncy) both;
 }
 
-.bubble-their {
-  background: var(--bubble-their) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  -webkit-backdrop-filter: var(--glass-blur) !important;
-  border: 1px solid var(--bubble-their-border) !important;
-  border-radius: 20px 20px 20px 4px !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
+.animate-ios-msg {
+  animation: iosMessageIn 280ms var(--spring-fluid) both;
 }
 
-/* Ergonomic Inputs */
-input, textarea, select {
-  background: var(--input-bg) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  border: 1px solid var(--border) !important;
-  color: #ffffff !important;
-  border-radius: 20px !important;
+.speaking-ring {
+  box-shadow: 0 0 0 2px var(--ios-green);
+  animation: iosSpeakingPulse 1.5s ease-in-out infinite;
+}
+
+/* iMessage Bubbles */
+.imessage-mine {
+  background: linear-gradient(180deg, #0A84FF 0%, #0070E0 100%);
+  color: #FFFFFF;
+  border-radius: 18px 18px 5px 18px;
+  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.25);
+}
+
+.imessage-their {
+  background: rgba(58, 58, 60, 0.78);
+  color: #FFFFFF;
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px 18px 18px 5px;
+}
+
+/* Apple Inset Input */
+.ios-input {
+  background: rgba(118, 118, 128, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  border-radius: 14px;
   outline: none;
-  font-family: inherit;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  transition: border-color 200ms var(--spring-fluid), background-color 200ms ease, box-shadow 200ms var(--spring-fluid);
 }
 
-input:focus, textarea:focus, select:focus {
-  border-color: var(--accent) !important;
-  background: rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 0 0 3px var(--glow), inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+.ios-input::placeholder {
+  color: rgba(235, 235, 245, 0.36);
 }
 
-/* Sliders */
-input[type="range"] {
-  accent-color: #38bdf8;
-  height: 6px;
+.ios-input:focus {
+  background: rgba(118, 118, 128, 0.32);
+  border-color: rgba(10, 132, 255, 0.75);
+  box-shadow: 0 0 0 3.5px rgba(10, 132, 255, 0.22);
+}
+
+/* iOS Slider */
+.ios-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.24);
+  outline: none;
   cursor: pointer;
+  transition: height 160ms var(--spring-fluid);
 }
 
-/* Custom Apple/Maxify Scrollbars */
+.ios-slider:hover {
+  height: 6px;
+}
+
+.ios-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  transition: transform 160ms var(--spring-bouncy);
+}
+
+.ios-slider:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+/* Apple Thin Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-
-/* Pulse for speaking participant */
-@keyframes speakingPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(50, 215, 75, 0.7); }
-  50% { box-shadow: 0 0 0 8px rgba(50, 215, 75, 0); }
-}
-
-.speaking-ring {
-  border-color: #32D74B !important;
-  animation: speakingPulse 1.4s infinite;
+  background: rgba(255, 255, 255, 0.34);
 }
 
 /* Accessible Skip Link */
@@ -345,12 +320,12 @@ input[type="range"] {
   left: 1rem;
   z-index: 100;
   padding: 0.75rem 1.25rem;
-  background: var(--accent);
+  background: var(--ios-blue);
   color: #ffffff;
-  border-radius: 12px;
+  border-radius: 14px;
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
 }
 
 .skip-link:focus {
@@ -358,6 +333,14 @@ input[type="range"] {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--ios-blue);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

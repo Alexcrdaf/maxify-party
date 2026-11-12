@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ArrowRight,
   Dice5,
-  Film,
-  Monitor,
+  Tv,
+  MonitorUp,
   Mic,
   Trash2,
-  Bookmark,
+  Clock,
   Zap,
-  Globe,
 } from 'lucide-react';
 import { isValidRoomCode } from '../config';
 
@@ -24,40 +23,54 @@ interface LandingPageProps {
   onJoinRoom: (roomCode: string, name: string) => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', onCreateRoom, onJoinRoom }) => {
-  const [userName, setUserName] = useState(() => localStorage.getItem('maxify_user_name') || '');
+function loadSavedRooms(): SavedRoom[] {
+  try {
+    const stored = localStorage.getItem('maxify_saved_rooms');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+export const LandingPage: React.FC<LandingPageProps> = ({
+  initialRoomCode = '',
+  onCreateRoom,
+  onJoinRoom,
+}) => {
+  const [userName, setUserName] = useState(() => {
+    try {
+      return localStorage.getItem('maxify_user_name') || '';
+    } catch {
+      return '';
+    }
+  });
   const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [errorMsg, setErrorMsg] = useState('');
-  const [savedRooms, setSavedRooms] = useState<SavedRoom[]>([]);
+  const [savedRooms, setSavedRooms] = useState<SavedRoom[]>(loadSavedRooms);
 
   const randomNames = ['Алекс', 'Макс', 'София', 'Даниил', 'Ева', 'Кирилл', 'Алина', 'Артём'];
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('maxify_saved_rooms');
-      if (stored) setSavedRooms(JSON.parse(stored));
-    } catch (_) {}
-  }, []);
-
-  useEffect(() => {
-    if (initialRoomCode) setRoomCode(initialRoomCode);
-  }, [initialRoomCode]);
 
   const handleRandomizeName = () => {
     const pick = randomNames[Math.floor(Math.random() * randomNames.length)];
     setUserName(pick);
-    localStorage.setItem('maxify_user_name', pick);
+    try {
+      localStorage.setItem('maxify_user_name', pick);
+    } catch {}
   };
 
   const handleNameChange = (val: string) => {
     setUserName(val);
-    localStorage.setItem('maxify_user_name', val);
+    try {
+      localStorage.setItem('maxify_user_name', val);
+    } catch {}
   };
 
   const handleCreate = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const cleanName = userName.trim() || 'Гость';
-    localStorage.setItem('maxify_user_name', cleanName);
+    try {
+      localStorage.setItem('maxify_user_name', cleanName);
+    } catch {}
     setErrorMsg('');
     onCreateRoom(cleanName);
   };
@@ -65,7 +78,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = userName.trim() || 'Гость';
-    localStorage.setItem('maxify_user_name', cleanName);
+    try {
+      localStorage.setItem('maxify_user_name', cleanName);
+    } catch {}
     if (!isValidRoomCode(roomCode)) {
       setErrorMsg('Введите корректный 6-значный код комнаты (латинские буквы и цифры).');
       return;
@@ -80,43 +95,51 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
     setSavedRooms(updated);
     try {
       localStorage.setItem('maxify_saved_rooms', JSON.stringify(updated));
-    } catch (_) {}
+    } catch {}
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-14 text-white relative z-10">
-      {/* Hero Header Area */}
-      <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight syne mb-4 leading-tight">
-          Смотри вместе.{' '}
-          <span className="bg-gradient-to-r from-[#da8fff] via-[#bf5af2] to-[#ff69b4] bg-clip-text text-transparent drop-shadow-md">
-            В один клик.
+    <div className="flex-1 flex flex-col justify-between max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-14 text-white relative z-10">
+      {/* Apple-style Hero */}
+      <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12 animate-ios-spring">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.07] border border-white/[0.12] text-[11px] font-medium text-white/80 mb-5 backdrop-blur-xl">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#0A84FF]" />
+          <span>Совместный просмотр без серверов и задержек</span>
+        </div>
+
+        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight sf-display mb-4 leading-[1.08] text-white">
+          Смотрите вместе.{' '}
+          <span className="bg-gradient-to-r from-[#5AC8FA] via-[#0A84FF] to-[#BF5AF2] bg-clip-text text-transparent">
+            В одно касание.
           </span>
         </h1>
-        <p className="text-base sm:text-lg text-[#dcbcff]/80 max-w-lg mx-auto leading-relaxed">
-          Мгновенный синхронный просмотр видео, стримов и трансляция вкладок с чистым звуком и без задержек.
+        <p className="text-[15px] sm:text-[17px] text-white/60 max-w-lg mx-auto leading-relaxed font-normal">
+          Синхронный видеоплеер, трансляция вкладки до 60 FPS и голосовой чат по прямому P2P-соединению.
         </p>
       </div>
 
-      {/* Main Glass Cards Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl w-full mx-auto mb-12">
+      {/* Main iOS 17 Action Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 max-w-4xl w-full mx-auto mb-10">
         {/* Card 1: Create Room */}
-        <div className="glass-panel p-6 sm:p-8 rounded-[32px] flex flex-col justify-between transition-all duration-300 hover:scale-[1.01] hover:border-[#bf5af2]/50">
+        <div
+          className="ios-material p-6 sm:p-7 rounded-[28px] flex flex-col justify-between animate-ios-spring"
+          style={{ animationDelay: '60ms' }}
+        >
           <div>
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#bf5af2] to-[#da8fff] flex items-center justify-center mb-5 shadow-lg shadow-[#bf5af2]/35">
-              <Film className="w-6 h-6 text-white" />
+            <div className="w-11 h-11 rounded-[14px] bg-gradient-to-b from-[#0A84FF] to-[#5E5CE6] flex items-center justify-center mb-5 shadow-[0_8px_20px_rgba(10,132,255,0.35)]">
+              <Tv className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight syne mb-2 text-white">
+            <h2 className="text-[22px] font-semibold tracking-tight sf-display mb-1.5 text-white">
               Создать комнату
             </h2>
-            <p className="text-xs sm:text-sm text-[#dcbcff]/70 leading-relaxed mb-6">
-              Получите уникальный 6-значный код комнаты, пригласите друзей и управляйте совместным плеером как хост.
+            <p className="text-[13px] text-white/55 leading-relaxed mb-6">
+              Создайте приватную комнату, отправьте код друзьям и управляйте воспроизведением.
             </p>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-[#dcbcff]/90 mb-1.5 ml-1">
-                  Ваше имя в комнате
+                <label className="block text-[12px] font-medium text-white/70 mb-1.5 ml-1">
+                  Ваше имя
                 </label>
                 <div className="relative">
                   <input
@@ -125,13 +148,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="Например: Алекс"
                     maxLength={20}
-                    className="w-full px-4 py-3 rounded-2xl bg-white/[0.06] border border-white/10 text-sm font-semibold text-white placeholder-[#dcbcff]/40 focus:outline-none focus:border-[#bf5af2] focus:ring-2 focus:ring-[#bf5af2]/30 transition-all backdrop-blur-xl"
+                    className="ios-input w-full px-4 py-3 pr-11 text-[14px] font-medium"
                   />
                   <button
                     type="button"
                     onClick={handleRandomizeName}
                     title="Случайное имя"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-[#dcbcff]/70 hover:text-white hover:bg-white/10 transition-colors"
+                    className="ios-press absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     <Dice5 className="w-4 h-4" />
                   </button>
@@ -143,43 +166,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
           <button
             type="button"
             onClick={() => handleCreate()}
-            className="w-full mt-8 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#da8fff] via-[#bf5af2] to-[#a855f7] hover:opacity-95 active:scale-98 text-white font-bold text-sm tracking-wide shadow-xl shadow-[#bf5af2]/40 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="ios-press w-full mt-7 py-3.5 px-6 rounded-[16px] bg-gradient-to-b from-[#0A84FF] to-[#0070E0] hover:brightness-110 text-white font-semibold text-[15px] tracking-tight shadow-[0_8px_24px_rgba(10,132,255,0.35)] flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Создать новую комнату</span>
-            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            <span>Создать комнату</span>
+            <ArrowRight className="w-4 h-4 stroke-[2.2]" />
           </button>
         </div>
 
-        {/* Card 2: Join by Code */}
-        <div className="glass-panel p-6 sm:p-8 rounded-[32px] flex flex-col justify-between transition-all duration-300 hover:scale-[1.01] hover:border-[#bf5af2]/50">
+        {/* Card 2: Join Room */}
+        <div
+          className="ios-material p-6 sm:p-7 rounded-[28px] flex flex-col justify-between animate-ios-spring"
+          style={{ animationDelay: '120ms' }}
+        >
           <div>
-            <div className="w-12 h-12 rounded-2xl bg-white/[0.08] border border-white/15 flex items-center justify-center mb-5 shadow-lg">
-              <Globe className="w-6 h-6 text-[#da8fff]" />
+            <div className="w-11 h-11 rounded-[14px] bg-white/[0.1] border border-white/[0.12] flex items-center justify-center mb-5">
+              <MonitorUp className="w-5 h-5 text-[#5AC8FA]" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight syne mb-2 text-white">
+            <h2 className="text-[22px] font-semibold tracking-tight sf-display mb-1.5 text-white">
               Войти по коду
             </h2>
-            <p className="text-xs sm:text-sm text-[#dcbcff]/70 leading-relaxed mb-6">
-              Друг прислал код комнаты? Введите его ниже, чтобы мгновенно подключиться к трансляции.
+            <p className="text-[13px] text-white/55 leading-relaxed mb-6">
+              Введите 6-значный код от ведущего, чтобы мгновенно подключиться к просмотру.
             </p>
 
-            <form onSubmit={handleJoin} className="space-y-4">
+            <form onSubmit={handleJoin} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-[#dcbcff]/90 mb-1.5 ml-1">
+                <label className="block text-[12px] font-medium text-white/70 mb-1.5 ml-1">
                   Код комнаты
                 </label>
                 <input
                   type="text"
                   value={roomCode}
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  placeholder="КОД (НАПР. K7MX42)"
+                  placeholder="K7MX42"
                   maxLength={10}
-                  className="w-full px-4 py-3 rounded-2xl bg-white/[0.06] border border-white/10 text-sm font-mono uppercase tracking-widest text-center text-white placeholder-[#dcbcff]/40 focus:outline-none focus:border-[#bf5af2] focus:ring-2 focus:ring-[#bf5af2]/30 transition-all backdrop-blur-xl font-bold"
+                  className="ios-input w-full px-4 py-3 text-[15px] font-mono uppercase tracking-[0.2em] text-center font-semibold tabular-nums"
                 />
               </div>
 
               {errorMsg && (
-                <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs text-center font-medium">
+                <div className="animate-ios-pop p-3 rounded-2xl bg-[#FF453A]/15 border border-[#FF453A]/30 text-[#FF6961] text-xs text-center font-medium">
                   {errorMsg}
                 </div>
               )}
@@ -190,75 +216,81 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
             type="button"
             onClick={handleJoin}
             disabled={!roomCode.trim()}
-            className="w-full mt-8 py-3.5 px-6 rounded-2xl bg-white/[0.1] hover:bg-white/[0.18] active:scale-98 disabled:opacity-40 disabled:hover:bg-white/[0.1] text-white font-bold text-sm tracking-wide border border-white/15 backdrop-blur-xl shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="ios-press w-full mt-7 py-3.5 px-6 rounded-[16px] bg-white/[0.12] hover:bg-white/[0.18] disabled:opacity-35 disabled:hover:bg-white/[0.12] text-white font-semibold text-[15px] tracking-tight border border-white/[0.12] flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Присоединиться к просмотру</span>
-            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            <span>Присоединиться</span>
+            <ArrowRight className="w-4 h-4 stroke-[2.2]" />
           </button>
         </div>
       </div>
 
-      {/* Feature Highlights Grid in iOS Glass Style */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl w-full mx-auto mb-10">
-        <div className="glass-panel p-5 rounded-2xl text-left">
-          <div className="flex items-center gap-3 mb-2">
-            <Zap className="w-5 h-5 text-[#da8fff]" />
-            <h3 className="text-sm font-bold text-white">Прямой P2P DataChannel</h3>
+      {/* Apple Bento Feature Strip */}
+      <div
+        className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 max-w-4xl w-full mx-auto mb-8 animate-ios-spring"
+        style={{ animationDelay: '180ms' }}
+      >
+        <div className="ios-material-thin p-4 sm:p-5 rounded-[22px] text-left">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <Zap className="w-4 h-4 text-[#0A84FF]" />
+            <h3 className="text-[13px] font-semibold text-white">Синхронизация P2P</h3>
           </div>
-          <p className="text-xs text-[#dcbcff]/70 leading-relaxed">
-            Синхронизация паузы, таймкода и скорости воспроизведения с миллисекундным откликом.
+          <p className="text-[12px] text-white/55 leading-relaxed">
+            Мгновенная синхронизация паузы, перемотки и таймкода напрямую между браузерами.
           </p>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl text-left">
-          <div className="flex items-center gap-3 mb-2">
-            <Monitor className="w-5 h-5 text-[#da8fff]" />
-            <h3 className="text-sm font-bold text-white">Трансляция вкладки</h3>
+        <div className="ios-material-thin p-4 sm:p-5 rounded-[22px] text-left">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <MonitorUp className="w-4 h-4 text-[#5AC8FA]" />
+            <h3 className="text-[13px] font-semibold text-white">Захват со звуком</h3>
           </div>
-          <p className="text-xs text-[#dcbcff]/70 leading-relaxed">
-            Захват видео и оригинального звука браузера без промежуточного сжатия и задержки.
+          <p className="text-[12px] text-white/55 leading-relaxed">
+            Трансляция вкладки браузера в высоком качестве с оригинальным стереозвуком.
           </p>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl text-left">
-          <div className="flex items-center gap-3 mb-2">
-            <Mic className="w-5 h-5 text-[#da8fff]" />
-            <h3 className="text-sm font-bold text-white">Голосовой чат Opus</h3>
+        <div className="ios-material-thin p-4 sm:p-5 rounded-[22px] text-left">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <Mic className="w-4 h-4 text-[#30D158]" />
+            <h3 className="text-[13px] font-semibold text-white">Голос и чат</h3>
           </div>
-          <p className="text-xs text-[#dcbcff]/70 leading-relaxed">
-            Раздельные аудиоканалы для фильма и голоса участников с подавлением эха.
+          <p className="text-[12px] text-white/55 leading-relaxed">
+            Чистый голосовой канал Opus с шумоподавлением и обмен файлами в чате.
           </p>
         </div>
       </div>
 
-      {/* Saved / Recent Rooms */}
+      {/* Recent Rooms */}
       {savedRooms.length > 0 && (
-        <div className="glass-panel p-5 rounded-2xl max-w-4xl w-full mx-auto mb-8 text-left">
+        <div
+          className="ios-material-thin p-4 sm:p-5 rounded-[22px] max-w-4xl w-full mx-auto mb-8 text-left animate-ios-spring"
+          style={{ animationDelay: '220ms' }}
+        >
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#dcbcff] uppercase tracking-wider">
-              <Bookmark className="w-4 h-4 text-[#da8fff]" />
+            <div className="flex items-center gap-2 text-[11px] font-semibold text-white/60 uppercase tracking-wider">
+              <Clock className="w-3.5 h-3.5 text-[#0A84FF]" />
               <span>Недавние комнаты</span>
             </div>
-            <span className="text-[11px] text-[#dcbcff]/50">Кликните, чтобы выбрать</span>
+            <span className="text-[11px] text-white/40">Нажмите для подстановки</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {savedRooms.map((sr) => (
               <div
                 key={sr.code}
                 onClick={() => setRoomCode(sr.code)}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs font-mono font-bold text-white cursor-pointer transition-all"
+                className="ios-press flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.1] text-xs font-mono font-semibold text-white cursor-pointer"
               >
-                <span>{sr.code}</span>
+                <span className="tabular-nums">{sr.code}</span>
                 {sr.isHost && (
-                  <span className="text-[9px] bg-[#bf5af2]/30 text-[#da8fff] px-1.5 py-0.2 rounded-full font-sans">
+                  <span className="text-[10px] bg-[#0A84FF]/20 text-[#5AC8FA] px-1.5 py-0.5 rounded-full font-sans font-medium">
                     Хост
                   </span>
                 )}
                 <button
                   type="button"
                   onClick={(e) => handleDeleteSavedRoom(sr.code, e)}
-                  title="Удалить"
-                  className="p-1 text-[#dcbcff]/40 hover:text-red-400 transition-colors ml-1"
+                  title="Удалить из истории"
+                  className="p-0.5 text-white/35 hover:text-[#FF453A] transition-colors ml-0.5 cursor-pointer"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -268,11 +300,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ initialRoomCode = '', 
         </div>
       )}
 
-      {/* Minimal Footer */}
-      <footer className="text-center text-xs text-[#dcbcff]/50 pt-6 border-t border-white/[0.06] space-y-1">
-        <div>Maxify • Чистый P2P совместный просмотр на GitHub Pages без серверных логов</div>
-        <div className="text-[10px] text-[#dcbcff]/40">
-          Платформа работает по технологии WebRTC P2P (прямой обмен данными между участниками без промежуточного сервера).
+      {/* Minimal Apple Footer */}
+      <footer className="text-center text-[11px] text-white/40 pt-5 border-t border-white/[0.07] space-y-1">
+        <div>Maxify • Приватный P2P-просмотр без регистрации и серверных логов</div>
+        <div className="text-[10px] text-white/30">
+          Работает по технологии WebRTC (прямой обмен данными между участниками комнаты).
         </div>
       </footer>
     </div>

@@ -75,7 +75,7 @@ export class ScreenCaptureService {
               frameRate: { ideal: targetFps, max: targetFps },
             });
           }
-        } catch (_) {
+        } catch {
           // Fallback gracefully if applyConstraints is not fully supported
         }
 
