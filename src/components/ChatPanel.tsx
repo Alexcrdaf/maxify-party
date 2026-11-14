@@ -147,8 +147,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
         {messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-white/40 text-xs text-center p-4">
-            Сообщений пока нет. Напишите что-нибудь или отправьте реакцию!
+          <div className="h-full flex items-center justify-center text-white/35 text-xs text-center p-4">
+            Пока тихо
           </div>
         ) : (
           messages.map((msg) => {

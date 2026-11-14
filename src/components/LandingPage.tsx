@@ -1,14 +1,5 @@
-import React, { useState } from 'react';
-import {
-  ArrowRight,
-  Dice5,
-  Tv,
-  MonitorUp,
-  Mic,
-  Trash2,
-  Clock,
-  Zap,
-} from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowRight, Dice5, Trash2 } from 'lucide-react';
 import { isValidRoomCode } from '../config';
 
 interface SavedRoom {
@@ -48,7 +39,54 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [savedRooms, setSavedRooms] = useState<SavedRoom[]>(loadSavedRooms);
 
+  const consoleRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
+
   const randomNames = ['Алекс', 'Макс', 'София', 'Даниил', 'Ева', 'Кирилл', 'Алина', 'Артём'];
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = consoleRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const px = x / rect.width;
+    const py = y / rect.height;
+
+    const rotY = (px - 0.5) * 6; // subtle +-3deg horizontal tilt
+    const rotX = (0.5 - py) * 5; // subtle +-2.5deg vertical tilt
+
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    rafRef.current = requestAnimationFrame(() => {
+      el.style.setProperty('--rx', `${rotX.toFixed(2)}deg`);
+      el.style.setProperty('--ry', `${rotY.toFixed(2)}deg`);
+      el.style.setProperty('--gx', `${(px * 100).toFixed(1)}%`);
+      el.style.setProperty('--gy', `${(py * 100).toFixed(1)}%`);
+    });
+  };
+
+  const handleMouseLeave = () => {
+    const el = consoleRef.current;
+    if (!el) return;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    el.style.setProperty('--rx', '0deg');
+    el.style.setProperty('--ry', '0deg');
+    el.style.setProperty('--gx', '50%');
+    el.style.setProperty('--gy', '0%');
+  };
 
   const handleRandomizeName = () => {
     const pick = randomNames[Math.floor(Math.random() * randomNames.length)];
@@ -99,213 +137,167 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-14 text-white relative z-10">
-      {/* Apple-style Hero */}
-      <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12 animate-ios-spring">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.07] border border-white/[0.12] text-[11px] font-medium text-white/80 mb-5 backdrop-blur-xl">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#0A84FF]" />
-          <span>Совместный просмотр без серверов и задержек</span>
-        </div>
-
-        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight sf-display mb-4 leading-[1.08] text-white">
-          Смотрите вместе.{' '}
-          <span className="bg-gradient-to-r from-[#5AC8FA] via-[#0A84FF] to-[#BF5AF2] bg-clip-text text-transparent">
-            В одно касание.
-          </span>
-        </h1>
-        <p className="text-[15px] sm:text-[17px] text-white/60 max-w-lg mx-auto leading-relaxed font-normal">
-          Синхронный видеоплеер, трансляция вкладки до 60 FPS и голосовой чат по прямому P2P-соединению.
-        </p>
-      </div>
-
-      {/* Main iOS 17 Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 max-w-4xl w-full mx-auto mb-10">
-        {/* Card 1: Create Room */}
+    <div className="flex-1 flex flex-col justify-between max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 text-[#F5F5F7] relative z-10 stage-perspective">
+      {/* Main Spatial 3D Session Console */}
+      <div className="my-auto py-4">
         <div
-          className="ios-material p-6 sm:p-7 rounded-[28px] flex flex-col justify-between animate-ios-spring"
-          style={{ animationDelay: '60ms' }}
+          ref={consoleRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className="animate-spatial-3d card-3d-interactive ios-material rounded-[28px] overflow-hidden"
         >
-          <div>
-            <div className="w-11 h-11 rounded-[14px] bg-gradient-to-b from-[#0A84FF] to-[#5E5CE6] flex items-center justify-center mb-5 shadow-[0_8px_20px_rgba(10,132,255,0.35)]">
-              <Tv className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-[22px] font-semibold tracking-tight sf-display mb-1.5 text-white">
-              Создать комнату
-            </h2>
-            <p className="text-[13px] text-white/55 leading-relaxed mb-6">
-              Создайте приватную комнату, отправьте код друзьям и управляйте воспроизведением.
-            </p>
+          <div className="card-3d-sheen" aria-hidden="true" />
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[12px] font-medium text-white/70 mb-1.5 ml-1">
-                  Ваше имя
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={userName}
-                    onChange={(e) => handleNameChange(e.target.value)}
-                    placeholder="Например: Алекс"
-                    maxLength={20}
-                    className="ios-input w-full px-4 py-3 pr-11 text-[14px] font-medium"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRandomizeName}
-                    title="Случайное имя"
-                    className="ios-press absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                  >
-                    <Dice5 className="w-4 h-4" />
-                  </button>
-                </div>
+          {/* Top Bar: Headline + Single Unified Name Input */}
+          <div className="p-6 sm:p-8 border-b border-white/[0.08] flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight sf-display text-[#F5F5F7] leading-tight">
+                Кинозал для своих
+              </h1>
+              <p className="text-[14px] sm:text-[15px] text-white/55 mt-1.5 leading-snug">
+                Синхронный эфир и видео без промежуточных серверов
+              </p>
+            </div>
+
+            <div className="w-full md:w-64 shrink-0">
+              <label className="block text-[11px] font-medium text-white/50 mb-1.5 ml-1">
+                Ваше имя
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  placeholder="Например: Алекс"
+                  maxLength={20}
+                  className="ios-input w-full px-3.5 py-2.5 pr-10 text-[14px] font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={handleRandomizeName}
+                  title="Случайное имя"
+                  className="ios-press absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-xl text-white/45 hover:text-[#F5F5F7] hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <Dice5 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => handleCreate()}
-            className="ios-press w-full mt-7 py-3.5 px-6 rounded-[16px] bg-gradient-to-b from-[#0A84FF] to-[#0070E0] hover:brightness-110 text-white font-semibold text-[15px] tracking-tight shadow-[0_8px_24px_rgba(10,132,255,0.35)] flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>Создать комнату</span>
-            <ArrowRight className="w-4 h-4 stroke-[2.2]" />
-          </button>
-        </div>
-
-        {/* Card 2: Join Room */}
-        <div
-          className="ios-material p-6 sm:p-7 rounded-[28px] flex flex-col justify-between animate-ios-spring"
-          style={{ animationDelay: '120ms' }}
-        >
-          <div>
-            <div className="w-11 h-11 rounded-[14px] bg-white/[0.1] border border-white/[0.12] flex items-center justify-center mb-5">
-              <MonitorUp className="w-5 h-5 text-[#5AC8FA]" />
-            </div>
-            <h2 className="text-[22px] font-semibold tracking-tight sf-display mb-1.5 text-white">
-              Войти по коду
-            </h2>
-            <p className="text-[13px] text-white/55 leading-relaxed mb-6">
-              Введите 6-значный код от ведущего, чтобы мгновенно подключиться к просмотру.
-            </p>
-
-            <form onSubmit={handleJoin} className="space-y-3">
+          {/* Asymmetric Split Console */}
+          <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-white/[0.08]">
+            {/* Left Module (5 cols): New Session */}
+            <div className="md:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-white/[0.015]">
               <div>
-                <label className="block text-[12px] font-medium text-white/70 mb-1.5 ml-1">
-                  Код комнаты
-                </label>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <h2 className="text-[18px] font-semibold sf-display text-[#F5F5F7]">
+                    Новый сеанс
+                  </h2>
+                  <span className="text-[11px] font-mono text-white/45 tabular-nums">
+                    WebRTC • 60 FPS
+                  </span>
+                </div>
+                <p className="text-[13px] text-white/55 leading-relaxed">
+                  Создайте закрытую комнату. Участники подключаются напрямую к вашему экрану или видеопотоку по 6-значному коду.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleCreate()}
+                className="ios-press w-full mt-7 py-3 px-5 rounded-[14px] bg-[#F5F5F7] hover:bg-white text-[#000000] font-semibold text-[14px] tracking-tight shadow-[0_8px_24px_rgba(255,255,255,0.12)] flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Открыть зал</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.2]" />
+              </button>
+            </div>
+
+            {/* Right Module (7 cols): Join by Code (Apple TV Passkey style) */}
+            <form
+              onSubmit={handleJoin}
+              className="md:col-span-7 p-6 sm:p-8 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <h2 className="text-[18px] font-semibold sf-display text-[#F5F5F7]">
+                    Вход по коду
+                  </h2>
+                  <span className="text-[11px] text-white/40">
+                    6 символов
+                  </span>
+                </div>
+
                 <input
                   type="text"
                   value={roomCode}
-                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    setRoomCode(e.target.value.toUpperCase());
+                    if (errorMsg) setErrorMsg('');
+                  }}
                   placeholder="K7MX42"
                   maxLength={10}
-                  className="ios-input w-full px-4 py-3 text-[15px] font-mono uppercase tracking-[0.2em] text-center font-semibold tabular-nums"
+                  aria-label="Код комнаты"
+                  className="ios-input w-full px-4 py-3.5 text-[20px] font-mono uppercase tracking-[0.28em] text-center font-semibold tabular-nums"
                 />
+
+                {errorMsg && (
+                  <div className="animate-ios-pop mt-3 p-2.5 rounded-xl bg-[#FF453A]/15 border border-[#FF453A]/30 text-[#FF6961] text-xs text-center font-medium">
+                    {errorMsg}
+                  </div>
+                )}
+
+                {savedRooms.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-[11px] text-white/40 mb-2">
+                      Недавние залы
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {savedRooms.map((sr) => (
+                        <div
+                          key={sr.code}
+                          onClick={() => {
+                            setRoomCode(sr.code);
+                            setErrorMsg('');
+                          }}
+                          className="ios-press flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.09] text-xs font-mono font-semibold text-[#F5F5F7] cursor-pointer"
+                        >
+                          <span className="tabular-nums">{sr.code}</span>
+                          {sr.isHost && (
+                            <span className="text-[10px] text-white/45 font-sans font-normal">
+                              хост
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteSavedRoom(sr.code, e)}
+                            title="Удалить из истории"
+                            className="p-0.5 text-white/30 hover:text-[#FF453A] transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {errorMsg && (
-                <div className="animate-ios-pop p-3 rounded-2xl bg-[#FF453A]/15 border border-[#FF453A]/30 text-[#FF6961] text-xs text-center font-medium">
-                  {errorMsg}
-                </div>
-              )}
+              <button
+                type="submit"
+                disabled={!roomCode.trim()}
+                className="ios-press w-full mt-7 py-3 px-5 rounded-[14px] bg-white/[0.1] hover:bg-white/[0.16] disabled:opacity-35 disabled:hover:bg-white/[0.1] text-[#F5F5F7] font-semibold text-[14px] tracking-tight border border-white/[0.12] flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Войти в зал</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.2]" />
+              </button>
             </form>
           </div>
-
-          <button
-            type="button"
-            onClick={handleJoin}
-            disabled={!roomCode.trim()}
-            className="ios-press w-full mt-7 py-3.5 px-6 rounded-[16px] bg-white/[0.12] hover:bg-white/[0.18] disabled:opacity-35 disabled:hover:bg-white/[0.12] text-white font-semibold text-[15px] tracking-tight border border-white/[0.12] flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>Присоединиться</span>
-            <ArrowRight className="w-4 h-4 stroke-[2.2]" />
-          </button>
         </div>
       </div>
 
-      {/* Apple Bento Feature Strip */}
-      <div
-        className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 max-w-4xl w-full mx-auto mb-8 animate-ios-spring"
-        style={{ animationDelay: '180ms' }}
-      >
-        <div className="ios-material-thin p-4 sm:p-5 rounded-[22px] text-left">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <Zap className="w-4 h-4 text-[#0A84FF]" />
-            <h3 className="text-[13px] font-semibold text-white">Синхронизация P2P</h3>
-          </div>
-          <p className="text-[12px] text-white/55 leading-relaxed">
-            Мгновенная синхронизация паузы, перемотки и таймкода напрямую между браузерами.
-          </p>
-        </div>
-
-        <div className="ios-material-thin p-4 sm:p-5 rounded-[22px] text-left">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <MonitorUp className="w-4 h-4 text-[#5AC8FA]" />
-            <h3 className="text-[13px] font-semibold text-white">Захват со звуком</h3>
-          </div>
-          <p className="text-[12px] text-white/55 leading-relaxed">
-            Трансляция вкладки браузера в высоком качестве с оригинальным стереозвуком.
-          </p>
-        </div>
-
-        <div className="ios-material-thin p-4 sm:p-5 rounded-[22px] text-left">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <Mic className="w-4 h-4 text-[#30D158]" />
-            <h3 className="text-[13px] font-semibold text-white">Голос и чат</h3>
-          </div>
-          <p className="text-[12px] text-white/55 leading-relaxed">
-            Чистый голосовой канал Opus с шумоподавлением и обмен файлами в чате.
-          </p>
-        </div>
-      </div>
-
-      {/* Recent Rooms */}
-      {savedRooms.length > 0 && (
-        <div
-          className="ios-material-thin p-4 sm:p-5 rounded-[22px] max-w-4xl w-full mx-auto mb-8 text-left animate-ios-spring"
-          style={{ animationDelay: '220ms' }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-[11px] font-semibold text-white/60 uppercase tracking-wider">
-              <Clock className="w-3.5 h-3.5 text-[#0A84FF]" />
-              <span>Недавние комнаты</span>
-            </div>
-            <span className="text-[11px] text-white/40">Нажмите для подстановки</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {savedRooms.map((sr) => (
-              <div
-                key={sr.code}
-                onClick={() => setRoomCode(sr.code)}
-                className="ios-press flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.1] text-xs font-mono font-semibold text-white cursor-pointer"
-              >
-                <span className="tabular-nums">{sr.code}</span>
-                {sr.isHost && (
-                  <span className="text-[10px] bg-[#0A84FF]/20 text-[#5AC8FA] px-1.5 py-0.5 rounded-full font-sans font-medium">
-                    Хост
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => handleDeleteSavedRoom(sr.code, e)}
-                  title="Удалить из истории"
-                  className="p-0.5 text-white/35 hover:text-[#FF453A] transition-colors ml-0.5 cursor-pointer"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Minimal Apple Footer */}
-      <footer className="text-center text-[11px] text-white/40 pt-5 border-t border-white/[0.07] space-y-1">
-        <div>Maxify • Приватный P2P-просмотр без регистрации и серверных логов</div>
-        <div className="text-[10px] text-white/30">
-          Работает по технологии WebRTC (прямой обмен данными между участниками комнаты).
-        </div>
+      {/* Concise P2P WebRTC Footnote */}
+      <footer className="text-center text-[11px] text-white/35 pt-4">
+        Прямое P2P-соединение WebRTC между участниками комнаты
       </footer>
     </div>
   );

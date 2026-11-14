@@ -6,7 +6,6 @@ import {
   VolumeX,
   Maximize2,
   Minimize2,
-  Film,
   RotateCcw,
   RotateCw,
   RefreshCw,
@@ -207,7 +206,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden bg-black aspect-video rounded-[24px] border border-white/[0.11] flex items-center justify-center group shadow-[0_24px_60px_rgba(0,0,0,0.65)] animate-ios-spring"
+      className="relative overflow-hidden bg-[#060608] aspect-video rounded-[24px] border border-white/[0.11] flex items-center justify-center group shadow-[0_28px_70px_rgba(0,0,0,0.72)] animate-theater-3d"
     >
       {/* Video Element */}
       <video
@@ -239,17 +238,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State: Minimal Projector Standby */}
       {!hasSource && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#111114] to-black z-20">
-          <div className="w-14 h-14 rounded-[18px] bg-white/[0.07] border border-white/[0.12] flex items-center justify-center text-[#0A84FF] mb-4 shadow-inner">
-            <Film className="w-7 h-7" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.05)_0%,rgba(6,6,8,0.98)_70%)] z-20">
+          <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.22em] text-white/40 mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+            <span>Ожидание источника</span>
           </div>
-          <h3 className="text-[17px] font-semibold text-white sf-display mb-1.5">
-            Экран совместного просмотра
+          <h3 className="text-[19px] sm:text-[22px] font-semibold text-[#F5F5F7] sf-display mb-1.5">
+            Экран готов к показу
           </h3>
-          <p className="text-[13px] text-white/55 max-w-sm mb-5 leading-relaxed">
-            Запустите трансляцию вкладки со звуком на панели ниже или откройте видео по прямой ссылке.
+          <p className="text-[13px] text-white/50 max-w-sm mb-6 leading-relaxed">
+            Запустите трансляцию вкладки на панели ниже или откройте видео по прямой ссылке.
           </p>
           {isHost && (
             <button
@@ -263,9 +263,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   isPlaying: false,
                 })
               }
-              className="ios-press py-2.5 px-5 rounded-full bg-[#0A84FF] hover:brightness-110 text-white font-semibold text-xs shadow-[0_8px_20px_rgba(10,132,255,0.35)] cursor-pointer"
+              className="ios-press py-2.5 px-5 rounded-full bg-[#F5F5F7] hover:bg-white text-[#000000] font-semibold text-xs shadow-[0_8px_24px_rgba(255,255,255,0.14)] cursor-pointer"
             >
-              Запустить демо (Big Buck Bunny)
+              Запустить тестовый ролик
             </button>
           )}
         </div>

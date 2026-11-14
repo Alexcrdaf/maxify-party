@@ -143,13 +143,13 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   const isSharingActive = isScreenSharing || (isHost && hasActiveScreenStream);
 
   return (
-    <div className="ios-material p-2.5 sm:p-3 rounded-[22px] flex flex-wrap items-center justify-between gap-2 animate-ios-spring">
+    <div className="ios-material p-2 sm:p-2.5 rounded-[22px] flex flex-wrap items-center justify-between gap-2 animate-dock-3d">
       {/* Left: Share & Video Source */}
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <button
           type="button"
           onClick={handleCopyLink}
-          className="ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-xs font-medium text-white border border-white/[0.08] cursor-pointer"
+          className="ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-xs font-medium text-[#F5F5F7] border border-white/[0.08] cursor-pointer"
           title="Скопировать ссылку-приглашение"
         >
           {copied ? (
@@ -164,7 +164,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
           <button
             type="button"
             onClick={() => setShowUrlModal(true)}
-            className="ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-xs font-medium text-white border border-white/[0.08] cursor-pointer"
+            className="ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-xs font-medium text-[#F5F5F7] border border-white/[0.08] cursor-pointer"
           >
             <LinkIcon className="w-3.5 h-3.5 text-[#5AC8FA]" />
             <span className="hidden xs:inline">Источник</span>
@@ -172,6 +172,8 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
           </button>
         )}
       </div>
+
+      <div className="h-5 w-px bg-white/10 hidden md:block" aria-hidden="true" />
 
       {/* Center: FaceTime-style Media Dock */}
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
@@ -181,7 +183,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
           className={`ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold border cursor-pointer ${
             isSharingActive
               ? 'bg-[#FF453A] border-[#FF6961]/50 text-white shadow-[0_6px_18px_rgba(255,69,58,0.35)]'
-              : 'bg-white/[0.08] hover:bg-white/[0.14] border-white/[0.08] text-white'
+              : 'bg-white/[0.08] hover:bg-white/[0.14] border-white/[0.08] text-[#F5F5F7]'
           }`}
           title={isSharingActive ? 'Остановить трансляцию экрана' : 'Транслировать вкладку со звуком'}
         >
@@ -239,6 +241,8 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
           </button>
         )}
       </div>
+
+      <div className="h-5 w-px bg-white/10 hidden md:block" aria-hidden="true" />
 
       {/* Right: Leave Room */}
       <button

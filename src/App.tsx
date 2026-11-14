@@ -493,7 +493,7 @@ export function App() {
       ) : (
         <main
           id="main-content"
-          className="flex-1 p-2.5 sm:p-4 lg:p-6 max-w-[1680px] w-full mx-auto flex flex-col gap-3 sm:gap-4"
+          className="flex-1 p-2.5 sm:p-4 lg:p-6 max-w-[1680px] w-full mx-auto flex flex-col gap-3 sm:gap-4 stage-perspective"
         >
           <div
             className={`grid grid-cols-1 ${
@@ -552,7 +552,7 @@ export function App() {
             </div>
 
             {isChatVisible && (
-              <div className="lg:col-span-1 flex flex-col gap-3 sm:gap-4 h-[550px] lg:h-auto animate-ios-spring">
+              <div className="lg:col-span-1 flex flex-col gap-3 sm:gap-4 h-[550px] lg:h-auto animate-sidebar-3d">
                 <div className="h-1/3 sm:h-2/5 min-h-[140px]">
                   <ParticipantList
                     participants={participants}

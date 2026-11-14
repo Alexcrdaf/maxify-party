@@ -43,7 +43,7 @@ export const ParticipantList: React.FC<ParticipantListProps> = ({
             >
               <div className="flex items-center gap-2.5 overflow-hidden">
                 <div
-                  className={`relative w-8 h-8 rounded-full bg-gradient-to-b from-[#5AC8FA] to-[#0A84FF] flex items-center justify-center text-xs font-semibold text-white shrink-0 transition-shadow ${
+                  className={`relative w-8 h-8 rounded-full bg-white/[0.12] border border-white/[0.12] flex items-center justify-center text-xs font-semibold text-[#F5F5F7] shrink-0 transition-shadow ${
                     p.isSpeaking ? 'speaking-ring' : ''
                   }`}
                 >

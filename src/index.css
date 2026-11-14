@@ -2,25 +2,25 @@
 
 @layer base {
   :root {
-    --ios-bg: #000000;
-    --ios-surface: rgba(28, 28, 30, 0.72);
-    --ios-surface-elevated: rgba(36, 36, 40, 0.86);
-    --ios-surface-thin: rgba(44, 44, 46, 0.48);
-    --ios-border: rgba(255, 255, 255, 0.11);
-    --ios-border-strong: rgba(255, 255, 255, 0.18);
-    --ios-specular: inset 0 0.5px 0 rgba(255, 255, 255, 0.24);
+    --ios-bg: #060608;
+    --ios-surface: rgba(24, 24, 28, 0.74);
+    --ios-surface-elevated: rgba(30, 30, 35, 0.88);
+    --ios-surface-thin: rgba(38, 38, 44, 0.52);
+    --ios-border: rgba(255, 255, 255, 0.1);
+    --ios-border-strong: rgba(255, 255, 255, 0.16);
+    --ios-specular: inset 0 1px 0 rgba(255, 255, 255, 0.16);
     --ios-blue: #0A84FF;
     --ios-indigo: #5E5CE6;
     --ios-purple: #BF5AF2;
     --ios-green: #30D158;
     --ios-red: #FF453A;
     --ios-amber: #FFD60A;
-    --ios-label: #FFFFFF;
-    --ios-label-secondary: rgba(235, 235, 245, 0.64);
-    --ios-label-tertiary: rgba(235, 235, 245, 0.36);
+    --ios-label: #F5F5F7;
+    --ios-label-secondary: rgba(245, 245, 247, 0.56);
+    --ios-label-tertiary: rgba(245, 245, 247, 0.36);
 
     /* iOS 17 ProMotion 120Hz Spring Curves */
-    --spring-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+    --spring-fluid: cubic-bezier(0.16, 1, 0.3, 1);
     --spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
     --spring-decel: cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -42,21 +42,21 @@
 /* Apple Display Typography */
 .sf-display {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.028em;
 }
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Subtle iOS 17 Ambient Wallpaper Mesh (Deep Apple Indigo / Midnight) */
+/* Apple Dark Titanium / Cinema Slate Backdrop */
 .ios-wallpaper {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(circle at 50% 0%, #141229 0%, #050508 55%, #000000 100%);
+  background: radial-gradient(ellipse 90% 65% at 50% -10%, #171923 0%, #0a0b10 45%, #060608 100%);
 }
 
 .ios-wallpaper::before,
@@ -64,31 +64,31 @@
   content: "";
   position: absolute;
   border-radius: 9999px;
-  filter: blur(110px);
-  opacity: 0.42;
+  filter: blur(130px);
+  opacity: 0.28;
   will-change: transform;
 }
 
 .ios-wallpaper::before {
-  width: 65vw;
-  height: 65vw;
-  max-width: 780px;
-  max-height: 780px;
-  top: -18%;
-  left: -10%;
-  background: radial-gradient(circle, rgba(94, 92, 230, 0.55), rgba(191, 90, 242, 0.22) 60%, transparent 75%);
-  animation: iosAmbientDrift 22s var(--spring-decel) infinite alternate;
+  width: 58vw;
+  height: 58vw;
+  max-width: 760px;
+  max-height: 760px;
+  top: -22%;
+  left: -8%;
+  background: radial-gradient(circle, rgba(98, 120, 165, 0.38), rgba(56, 66, 92, 0.16) 60%, transparent 75%);
+  animation: iosAmbientDrift 24s var(--spring-decel) infinite alternate;
 }
 
 .ios-wallpaper::after {
-  width: 55vw;
-  height: 55vw;
+  width: 52vw;
+  height: 52vw;
   max-width: 680px;
   max-height: 680px;
-  bottom: -15%;
+  bottom: -18%;
   right: -8%;
-  background: radial-gradient(circle, rgba(10, 132, 255, 0.42), rgba(94, 92, 230, 0.18) 60%, transparent 75%);
-  animation: iosAmbientDrift 28s var(--spring-decel) infinite alternate-reverse;
+  background: radial-gradient(circle, rgba(10, 132, 255, 0.22), rgba(48, 56, 82, 0.14) 60%, transparent 75%);
+  animation: iosAmbientDrift 30s var(--spring-decel) infinite alternate-reverse;
 }
 
 @keyframes iosAmbientDrift {
@@ -96,38 +96,97 @@
     transform: translate3d(0, 0, 0) scale(1);
   }
   100% {
-    transform: translate3d(4%, 6%, 0) scale(1.08);
+    transform: translate3d(3%, 5%, 0) scale(1.06);
   }
 }
 
-/* iOS 17 System Materials */
+/* Apple Dark Titanium System Materials */
 .ios-material {
   background: var(--ios-surface);
-  backdrop-filter: blur(40px) saturate(190%);
-  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  backdrop-filter: blur(40px) saturate(185%);
+  -webkit-backdrop-filter: blur(40px) saturate(185%);
   border: 1px solid var(--ios-border);
-  box-shadow: var(--ios-specular), 0 20px 48px rgba(0, 0, 0, 0.48);
+  box-shadow: var(--ios-specular), 0 24px 56px rgba(0, 0, 0, 0.56);
 }
 
 .ios-material-thin {
   background: var(--ios-surface-thin);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: var(--ios-specular), 0 8px 24px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(28px) saturate(175%);
+  -webkit-backdrop-filter: blur(28px) saturate(175%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: var(--ios-specular), 0 10px 28px rgba(0, 0, 0, 0.36);
 }
 
 .ios-material-elevated {
   background: var(--ios-surface-elevated);
-  backdrop-filter: blur(50px) saturate(210%);
-  -webkit-backdrop-filter: blur(50px) saturate(210%);
+  backdrop-filter: blur(50px) saturate(200%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%);
   border: 1px solid var(--ios-border-strong);
-  box-shadow: var(--ios-specular), 0 28px 70px rgba(0, 0, 0, 0.68);
+  box-shadow: var(--ios-specular), 0 32px 80px rgba(0, 0, 0, 0.72);
+}
+
+/* 3D Spatial Scene & Interactive Cursor Specular */
+.stage-perspective {
+  perspective: 1400px;
+  transform-style: preserve-3d;
+}
+
+.card-3d-interactive {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 280ms var(--spring-fluid), box-shadow 300ms var(--spring-fluid);
+  will-change: transform;
+}
+
+.card-3d-interactive::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    520px circle at var(--gx, 50%) var(--gy, 0%),
+    rgba(255, 255, 255, 0.08),
+    transparent 60%
+  );
+  z-index: 1;
+}
+
+.card-3d-interactive > * {
+  position: relative;
+  z-index: 2;
+}
+
+.card-3d-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-3d-sheen::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: -75%;
+  width: 55%;
+  height: 180%;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.09) 50%,
+    transparent 80%
+  );
+  transform: skewX(-18deg);
+  animation: glassSheenSweep 1.35s var(--spring-fluid) 120ms both;
 }
 
 /* Tactile iOS 17 Press Physics */
 .ios-press {
-  transition: transform 220ms var(--spring-fluid), background-color 200ms ease, opacity 200ms ease, box-shadow 220ms var(--spring-fluid);
+  transition: transform 200ms var(--spring-fluid), background-color 180ms ease, opacity 180ms ease, box-shadow 200ms var(--spring-fluid);
   will-change: transform;
   user-select: none;
   -webkit-user-select: none;
@@ -135,10 +194,68 @@
 }
 
 .ios-press:active:not(:disabled) {
-  transform: scale(0.955);
+  transform: scale(0.96);
 }
 
-/* iOS 17 Spring Entrance Animations */
+/* Hardware-Accelerated 3D Spatial Entrance Keyframes */
+@keyframes spatialEnter3D {
+  0% {
+    opacity: 0;
+    transform: perspective(1400px) rotateX(16deg) rotateY(-4deg) translateZ(-120px) translateY(28px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1400px) rotateX(0deg) rotateY(0deg) translateZ(0px) translateY(0px) scale(1);
+  }
+}
+
+@keyframes glassSheenSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(0%) skewX(-18deg);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(360%) skewX(-18deg);
+  }
+}
+
+@keyframes theaterUnfold3D {
+  0% {
+    opacity: 0;
+    transform: perspective(1600px) rotateX(12deg) translateZ(-80px) translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1600px) rotateX(0deg) translateZ(0px) translateY(0px) scale(1);
+  }
+}
+
+@keyframes dockFlip3D {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) rotateX(-22deg) translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(0deg) translateY(0px);
+  }
+}
+
+@keyframes sidebarSwing3D {
+  0% {
+    opacity: 0;
+    transform: perspective(1200px) rotateY(-14deg) translateX(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1200px) rotateY(0deg) translateX(0px);
+  }
+}
+
 @keyframes iosSpringIn {
   0% {
     opacity: 0;
@@ -203,6 +320,22 @@
   }
 }
 
+.animate-spatial-3d {
+  animation: spatialEnter3D 720ms var(--spring-fluid) both;
+}
+
+.animate-theater-3d {
+  animation: theaterUnfold3D 680ms var(--spring-fluid) both;
+}
+
+.animate-dock-3d {
+  animation: dockFlip3D 640ms var(--spring-fluid) 80ms both;
+}
+
+.animate-sidebar-3d {
+  animation: sidebarSwing3D 680ms var(--spring-fluid) 60ms both;
+}
+
 .animate-ios-spring {
   animation: iosSpringIn 480ms var(--spring-fluid) both;
 }
@@ -231,34 +364,34 @@
 /* iMessage Bubbles */
 .imessage-mine {
   background: linear-gradient(180deg, #0A84FF 0%, #0070E0 100%);
-  color: #FFFFFF;
+  color: #F5F5F7;
   border-radius: 18px 18px 5px 18px;
   box-shadow: 0 2px 10px rgba(10, 132, 255, 0.25);
 }
 
 .imessage-their {
-  background: rgba(58, 58, 60, 0.78);
-  color: #FFFFFF;
+  background: rgba(54, 54, 60, 0.78);
+  color: #F5F5F7;
   border: 0.5px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px 18px 18px 5px;
 }
 
 /* Apple Inset Input */
 .ios-input {
-  background: rgba(118, 118, 128, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #FFFFFF;
+  background: rgba(118, 118, 128, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #F5F5F7;
   border-radius: 14px;
   outline: none;
   transition: border-color 200ms var(--spring-fluid), background-color 200ms ease, box-shadow 200ms var(--spring-fluid);
 }
 
 .ios-input::placeholder {
-  color: rgba(235, 235, 245, 0.36);
+  color: var(--ios-label-tertiary);
 }
 
 .ios-input:focus {
-  background: rgba(118, 118, 128, 0.32);
+  background: rgba(118, 118, 128, 0.28);
   border-color: rgba(10, 132, 255, 0.75);
   box-shadow: 0 0 0 3.5px rgba(10, 132, 255, 0.22);
 }
@@ -285,7 +418,7 @@
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  background: #FFFFFF;
+  background: #F5F5F7;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
   transition: transform 160ms var(--spring-bouncy);
 }
@@ -305,12 +438,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.16);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.32);
 }
 
 /* Accessible Skip Link */
@@ -321,7 +454,7 @@
   z-index: 100;
   padding: 0.75rem 1.25rem;
   background: var(--ios-blue);
-  color: #ffffff;
+  color: #F5F5F7;
   border-radius: 14px;
   font-weight: 600;
   text-decoration: none;
