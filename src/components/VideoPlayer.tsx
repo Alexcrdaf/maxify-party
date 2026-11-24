@@ -24,7 +24,7 @@ interface VideoPlayerProps {
   playbackState: PlaybackState;
   onUpdateState: (newState: Partial<PlaybackState>) => void;
   isHost: boolean;
-  isLocalSharing?: boolean;
+   isLocalSharing?: boolean;
   screenStream: MediaStream | null;
   activeStreamerName?: string | null;
   onStopScreenShare?: () => void;
@@ -37,9 +37,6 @@ interface VideoPlayerProps {
   isChatOpenInPlayer?: boolean;
   onToggleInPlayerChat?: () => void;
 }
-
-const iconBtn =
-  'glass-btn w-9 h-9 rounded-full flex items-center justify-center shrink-0';
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   playbackState,
@@ -88,7 +85,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
     idleTimerRef.current = setTimeout(() => {
       setHudVisible(false);
-    }, 2600);
+    }, 2300);
   }, []);
 
   useEffect(() => {
@@ -98,6 +95,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
   }, [wakeHud]);
 
+  // Sync fullscreen state on Esc
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -106,7 +104,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Bind WebRTC screenStream with autoplay fallback (prevents a black screen for 2nd+ viewer)
+  // Bind WebRTC screenStream with guaranteed autoplay fallback (prevents black screen on 2nd+ viewer)
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -115,6 +113,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.srcObject = screenStream;
       setAutoplayBlockedAudio(false);
 
+      // Broadcaster stays locally muted to prevent tab audio feedback loop
       if (isLocalSharing) {
         video.muted = true;
         video.play().catch(() => {});
@@ -122,6 +121,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         video.muted = isMuted;
         video.volume = volume;
         video.play().catch(() => {
+          // Browser blocked unmuted autoplay -> start muted immediately so video plays without black screen
           video.muted = true;
           setAutoplayBlockedAudio(true);
           video.play().catch(() => {});
@@ -131,10 +131,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.srcObject = null;
       setAutoplayBlockedAudio(false);
     }
-    // Re-bind only when the stream or local-sharing role changes
+    // Intentionally only re-bind when stream or local-sharing status changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenStream, isLocalSharing]);
 
+  // Apply volume & mute changes smoothly without re-attaching srcObject
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -147,7 +148,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [screenStream, isLocalSharing, isMuted, volume, autoplayBlockedAudio]);
 
-  // Sync incoming direct-video PlaybackState
+  // Sync incoming direct video PlaybackState
   useEffect(() => {
     if (!videoRef.current || screenStream) return;
 
@@ -187,7 +188,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => clearTimeout(timer);
   }, [playbackState, screenStream]);
 
-  const handleUnblockAudio = useCallback(() => {
+  const handleUnblockAudio = () => {
     const video = videoRef.current;
     if (!video) return;
     setAutoplayBlockedAudio(false);
@@ -195,7 +196,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     video.muted = false;
     video.volume = volume > 0 ? volume : 0.9;
     video.play().catch(() => {});
-  }, [volume]);
+  };
 
   const togglePlay = useCallback(() => {
     if (!videoRef.current || screenStream) return;
@@ -233,7 +234,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const next = !isMuted;
     videoRef.current.muted = next;
     setIsMuted(next);
-  }, [isMuted, autoplayBlockedAudio, handleUnblockAudio]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMuted, autoplayBlockedAudio]);
 
   const handleVolumeChange = (newVol: number) => {
     if (!videoRef.current) return;
@@ -253,7 +255,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, []);
 
-  // Keyboard: Space = play/pause, F = fullscreen, M = mute
+  // Keyboard shortcuts for comfortable movie watching (F = Fullscreen, M = Mute, Space = Play/Pause)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -261,7 +263,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         target &&
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
-          target.tagName === 'BUTTON' ||
           target.isContentEditable)
       ) {
         return;
@@ -296,20 +297,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const shouldShowControls = hasSource && !hudLockedHidden && (hudVisible || showChatOverlay);
   const hideCursor = hasSource && !hudVisible && !showChatOverlay;
-  const fullBleed = isCinemaMode || isFullscreen;
 
   return (
     <div
       ref={containerRef}
       onMouseMove={wakeHud}
       onTouchStart={wakeHud}
-      onClick={wakeHud}
-      className={`relative overflow-hidden bg-black flex items-center justify-center select-none ${
-        fullBleed
-          ? 'w-full h-full rounded-none'
-          : 'w-full aspect-video rounded-[28px] border-[0.5px] border-white/20 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.18)]'
+      onClick={() => {
+        wakeHud();
+      }}
+      className={`relative overflow-hidden bg-black flex items-center justify-center select-none transition-all duration-300 ${
+        isCinemaMode || isFullscreen
+          ? 'w-full h-full rounded-none border-0'
+          : 'w-full aspect-video rounded-2xl border border-white/[0.08] shadow-[0_24px_60px_rgba(0,0,0,0.7)]'
       } ${hideCursor ? 'cursor-none' : ''}`}
     >
+      {/* HTML5 / WebRTC Video Surface */}
       <video
         ref={videoRef}
         playsInline
@@ -332,7 +335,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         className="w-full h-full object-contain bg-black"
       />
 
-      {/* Browser blocked unmuted autoplay */}
+      {/* Unmute Prompt if Browser Blocked Unmuted Autoplay */}
       {screenStream && autoplayBlockedAudio && !isLocalSharing && (
         <button
           type="button"
@@ -340,23 +343,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             e.stopPropagation();
             handleUnblockAudio();
           }}
-          className="glass-btn glass-strong anim-pop absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 flex items-center gap-2.5 h-12 px-5 rounded-full text-[13px] font-semibold"
+          className="tactile absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#FAFAFA] text-[#09090B] text-xs sm:text-sm font-semibold shadow-[0_12px_40px_rgba(0,0,0,0.8)] cursor-pointer"
         >
-          <Volume2 className="w-4 h-4 text-[#ff453a]" />
-          <span>Нажмите, чтобы включить звук</span>
+          <Volume2 className="w-4 h-4 text-rose-600" />
+          <span>Нажмите, чтобы включить звук эфира</span>
         </button>
       )}
 
-      {/* Live status */}
-      {screenStream && (
-        <div
-          className={`glass-strong absolute top-3.5 left-3.5 z-30 flex items-center gap-2 h-9 pl-3 pr-2 rounded-full text-xs font-medium text-white max-w-[calc(100%-1.75rem)] transition-opacity duration-300 ${
-            shouldShowControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        >
-          <span className="w-2 h-2 rounded-full bg-[#ff453a] animate-pulse shrink-0" />
-          <ScreenShare className="w-3.5 h-3.5 text-white/60 shrink-0" />
-          <span className="truncate">
+      {/* Top-Left Live Status (auto-hides with HUD when watching movie!) */}
+      {screenStream && shouldShowControls && (
+        <div className="absolute top-3.5 left-3.5 z-30 flex items-center gap-2 px-3 py-1.5 rounded-lg studio-hud text-xs font-medium text-zinc-200 transition-opacity duration-200">
+          <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+          <ScreenShare className="w-3.5 h-3.5 text-zinc-400" />
+          <span>
             {isLocalSharing
               ? 'Вы делитесь экраном'
               : activeStreamerName
@@ -370,17 +369,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 e.stopPropagation();
                 onStopScreenShare();
               }}
-              className="glass-btn glass-btn-red h-6 px-2.5 rounded-full text-[11px] font-semibold ml-1"
+              className="tactile ml-1.5 px-2 py-0.5 rounded bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-semibold cursor-pointer"
             >
-              Стоп
+              Завершить
             </button>
           )}
         </div>
       )}
 
-      {/* Un-hide controls when locked / leave cinema mode */}
+      {/* Top-Right Minimal Controls when HUD is Locked or Cinema Mode is active */}
       {hasSource && hudVisible && (hudLockedHidden || isCinemaMode) && (
-        <div className="absolute top-3.5 right-3.5 z-40 flex items-center gap-2 anim-pop">
+        <div className="absolute top-3.5 right-3.5 z-40 flex items-center gap-1.5">
           {hudLockedHidden && (
             <button
               type="button"
@@ -388,11 +387,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 e.stopPropagation();
                 setHudLockedHidden(false);
               }}
-              title="Показать панель плеера"
-              className="glass-btn glass-strong h-9 px-3.5 rounded-full text-xs font-medium flex items-center gap-1.5"
+              title="Разблокировать панель плеера"
+              className="tactile flex items-center gap-1.5 px-3 py-1.5 rounded-lg studio-hud text-xs font-medium text-zinc-200 hover:text-white cursor-pointer"
             >
-              <Unlock className="w-3.5 h-3.5 text-[#ffd60a]" />
-              <span>Панель плеера</span>
+              <Unlock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Показать плеер</span>
             </button>
           )}
 
@@ -404,8 +403,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 setHudLockedHidden(false);
                 onToggleCinemaMode();
               }}
-              title="Вернуть интерфейс (H или Esc)"
-              className="glass-btn glass-strong h-9 px-3.5 rounded-full text-xs font-medium flex items-center gap-1.5"
+              title="Вернуть интерфейс сайта (клавиша H или Esc)"
+              className="tactile flex items-center gap-1.5 px-3 py-1.5 rounded-lg studio-hud text-xs font-medium text-zinc-200 hover:text-white cursor-pointer"
             >
               <Eye className="w-3.5 h-3.5" />
               <span>Вернуть интерфейс</span>
@@ -414,18 +413,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Empty standby */}
+      {/* Empty Standby Screen */}
       {!hasSource && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-20 bg-[radial-gradient(ellipse_at_50%_0%,rgba(10,132,255,0.18),transparent_65%),linear-gradient(180deg,#0a0c16,#05060a)]">
-          <div className="glass-thin rounded-full px-3.5 h-7 inline-flex items-center gap-2 text-[11px] font-medium text-white/65 mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/50" />
-            Экран зала
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#0B0B0E] z-20">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.07] text-[11px] font-mono uppercase tracking-widest text-zinc-400 mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+            <span>Экран зала</span>
           </div>
-          <h3 className="text-[20px] sm:text-[24px] font-semibold text-white font-display mb-2">
-            Готов к показу
+          <h3 className="text-lg sm:text-xl font-semibold text-[#FAFAFA] font-display mb-1.5">
+            Готов к началу показа
           </h3>
-          <p className="text-[13px] text-white/55 max-w-sm mb-6 leading-relaxed">
-            Нажмите «Экран в эфир» на нижней панели — зрители увидят вашу вкладку и услышат звук.
+          <p className="text-xs sm:text-[13px] text-zinc-400 max-w-md mb-6 leading-relaxed">
+            Включите «Экран в эфир» на нижней панели, чтобы транслировать любой фильм или вкладку со звуком сразу для всех зрителей в зале.
           </p>
           {isHost && (
             <button
@@ -439,30 +438,29 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   isPlaying: false,
                 })
               }
-              className="glass-btn h-10 px-5 rounded-full text-[13px] font-medium"
+              className="tactile py-2.5 px-4 rounded-xl bg-white/[0.09] hover:bg-white/[0.15] border border-white/[0.1] text-[#FAFAFA] font-medium text-xs cursor-pointer"
             >
-              Проверить плеер на тестовом видео
+              Проверить синхронный плеер (тестовое HD-видео)
             </button>
           )}
         </div>
       )}
 
-      {/* External notice */}
+      {/* External Notice */}
       {externalNotice && (
-        <div className="glass-strong anim-drop absolute top-3.5 left-3.5 right-3.5 z-30 p-3.5 rounded-3xl text-xs text-white flex items-start justify-between gap-3">
+        <div className="animate-toast-in absolute top-3.5 left-3.5 right-3.5 z-30 p-3.5 rounded-xl studio-hud text-xs text-zinc-200 flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-[#ffd60a] mt-1 shrink-0" />
+            <span className="w-2 h-2 rounded-full bg-amber-400 mt-1 shrink-0" />
             <div>
-              <span className="font-semibold block mb-0.5">{externalNotice.title}</span>
-              <span className="text-white/65 leading-relaxed">{externalNotice.description}</span>
+              <span className="font-semibold text-white block mb-0.5">{externalNotice.title}</span>
+              <span className="text-zinc-400 leading-relaxed">{externalNotice.description}</span>
             </div>
           </div>
           {onDismissNotice && (
             <button
               type="button"
               onClick={onDismissNotice}
-              aria-label="Закрыть уведомление"
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 cursor-pointer bg-transparent border-0 shrink-0"
+              className="text-zinc-400 hover:text-white p-1 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -470,19 +468,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Bottom glass HUD — fades out when the mouse rests */}
+      {/* Bottom Floating Cinema HUD (auto-fades completely when mouse stops moving!) */}
       {hasSource && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`glass-strong absolute bottom-3 inset-x-3 sm:bottom-4 sm:inset-x-5 max-w-4xl mx-auto rounded-[26px] px-3.5 py-3 z-30 flex flex-col gap-2.5 transition-all duration-300 ${
+          className={`absolute bottom-3 inset-x-3 sm:bottom-4 sm:inset-x-4 max-w-4xl mx-auto rounded-xl studio-hud px-3.5 py-2.5 z-30 flex flex-col gap-2 transition-all duration-200 ${
             shouldShowControls
               ? 'opacity-100 translate-y-0 pointer-events-auto'
-              : 'opacity-0 translate-y-3 pointer-events-none'
+              : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
+          {/* Scrubber for direct video */}
           {!screenStream && (
             <div className="flex items-center gap-3">
-              <span className="text-[11px] font-mono tabular-nums text-white/75 w-11 text-right">
+              <span className="text-[11px] font-mono tabular-nums text-zinc-300 w-11 text-right">
                 {formatTime(currentTime)}
               </span>
               <input
@@ -491,63 +490,61 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 max={duration || 100}
                 value={currentTime}
                 onChange={(e) => handleSeek(Number(e.target.value))}
-                aria-label="Перемотка"
-                className="glass-range flex-1"
+                className="cinema-range flex-1"
               />
-              <span className="text-[11px] font-mono tabular-nums text-white/45 w-11">
+              <span className="text-[11px] font-mono tabular-nums text-zinc-500 w-11">
                 {formatTime(duration)}
               </span>
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5">
+          {/* Main HUD Controls */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Left Playback & Volume */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {!screenStream && (
                 <>
                   <button
                     type="button"
                     onClick={togglePlay}
-                    className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shrink-0 cursor-pointer border-0 transition-transform duration-200 hover:scale-105 active:scale-95 shadow-[0_6px_16px_rgba(0,0,0,0.45)]"
+                    className="tactile w-8 h-8 rounded-lg bg-[#FAFAFA] text-[#09090B] flex items-center justify-center hover:bg-white cursor-pointer"
                     title={isPlaying ? 'Пауза (Пробел)' : 'Воспроизвести (Пробел)'}
-                    aria-label={isPlaying ? 'Пауза' : 'Воспроизвести'}
                   >
                     {isPlaying ? (
-                      <Pause className="w-[18px] h-[18px] fill-current" />
+                      <Pause className="w-4 h-4 fill-current" />
                     ) : (
-                      <Play className="w-[18px] h-[18px] fill-current ml-0.5" />
+                      <Play className="w-4 h-4 fill-current ml-0.5" />
                     )}
                   </button>
                   <button
                     type="button"
                     onClick={() => seekRelative(-10)}
-                    className={iconBtn}
-                    title="Назад 10 секунд"
-                    aria-label="Назад 10 секунд"
+                    className="tactile p-1.5 rounded-lg hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer"
+                    title="Назад 10 сек"
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <RotateCcw className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => seekRelative(10)}
-                    className={iconBtn}
-                    title="Вперёд 10 секунд"
-                    aria-label="Вперёд 10 секунд"
+                    className="tactile p-1.5 rounded-lg hover:bg-white/10 text-zinc-300 hover:text-white cursor-pointer"
+                    title="Вперёд 10 сек"
                   >
-                    <RotateCw className="w-4 h-4" />
+                    <RotateCw className="w-3.5 h-3.5" />
                   </button>
                 </>
               )}
 
-              <div className="glass-thin h-9 rounded-full flex items-center gap-2 pl-3 pr-3.5">
+              {/* Volume */}
+              <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/[0.06]">
                 <button
                   type="button"
                   onClick={toggleMute}
-                  className="text-white/80 hover:text-white cursor-pointer bg-transparent border-0 p-0 flex"
+                  className="tactile text-zinc-300 hover:text-white cursor-pointer"
                   title={isMuted ? 'Включить звук (M)' : 'Выключить звук (M)'}
-                  aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
                 >
                   {isMuted || volume === 0 || autoplayBlockedAudio ? (
-                    <VolumeX className="w-4 h-4 text-[#ff453a]" />
+                    <VolumeX className="w-4 h-4 text-rose-400" />
                   ) : (
                     <Volume2 className="w-4 h-4" />
                   )}
@@ -559,18 +556,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   step="0.05"
                   value={isMuted || autoplayBlockedAudio ? 0 : volume}
                   onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                  aria-label="Громкость"
-                  className="glass-range w-16 sm:w-20"
+                  className="cinema-range w-14 sm:w-18"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {/* Right View Controls (Chat, Re-sync, Lock HUD, Hide Site UI, Fullscreen) */}
+            <div className="flex items-center gap-1 sm:gap-1.5">
               {onRequestScreenStream && !isLocalSharing && screenStream && (
                 <button
                   type="button"
                   onClick={onRequestScreenStream}
-                  className="glass-btn h-9 px-3 rounded-full text-xs flex items-center gap-1.5"
+                  className="tactile px-2.5 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white text-xs flex items-center gap-1.5 cursor-pointer"
                   title="Переподключить видеопоток"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -582,56 +579,63 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 <button
                   type="button"
                   onClick={toggleChatOverlay}
-                  className={`glass-btn h-9 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 ${
-                    showChatOverlay ? 'glass-btn-blue' : ''
+                  className={`tactile px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer ${
+                    showChatOverlay
+                      ? 'bg-[#FAFAFA] text-[#09090B]'
+                      : 'bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white'
                   }`}
-                  title="Чат поверх видео"
-                  aria-pressed={showChatOverlay}
+                  title="Поверхностный чат поверх видео"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Чат</span>
                 </button>
               )}
 
+              {/* Lock HUD completely so accidental mouse moves don't show bottom bar */}
               <button
                 type="button"
                 onClick={() => setHudLockedHidden(true)}
-                className={iconBtn}
-                title="Скрыть панель плеера (чистый кадр)"
-                aria-label="Скрыть панель плеера"
+                className="tactile p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white cursor-pointer"
+                title="Скрыть даже нижнюю полосу плеера (чистый кадр)"
               >
                 <Lock className="w-3.5 h-3.5" />
               </button>
 
+              {/* Toggle Site-Wide Cinema / Lights-Off Mode */}
               {onToggleCinemaMode && (
                 <button
                   type="button"
                   onClick={onToggleCinemaMode}
-                  className={`glass-btn h-9 px-3 rounded-full text-xs font-medium flex items-center gap-1.5 ${
-                    isCinemaMode ? 'glass-btn-blue' : ''
+                  className={`tactile px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer ${
+                    isCinemaMode
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : 'bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white'
                   }`}
                   title={
                     isCinemaMode
-                      ? 'Вернуть интерфейс (H / Esc)'
-                      : 'Скрыть весь интерфейс вокруг фильма (H)'
+                      ? 'Вернуть панели сайта (H / Esc)'
+                      : 'Выключить весь интерфейс вокруг фильма (H)'
                   }
-                  aria-pressed={isCinemaMode}
                 >
                   {isCinemaMode ? (
-                    <Eye className="w-3.5 h-3.5" />
+                    <>
+                      <Eye className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Интерфейс</span>
+                    </>
                   ) : (
-                    <EyeOff className="w-3.5 h-3.5" />
+                    <>
+                      <EyeOff className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Без UI</span>
+                    </>
                   )}
-                  <span className="hidden sm:inline">{isCinemaMode ? 'Интерфейс' : 'Без UI'}</span>
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className={iconBtn}
+                className="tactile p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white cursor-pointer"
                 title="Во весь экран (F)"
-                aria-label="Во весь экран"
               >
                 {isFullscreen ? (
                   <Minimize2 className="w-4 h-4" />
@@ -644,32 +648,31 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Floating chat over video */}
+      {/* Single-Header Floating Chat Overlay inside Player */}
       {showChatOverlay && children && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`glass-strong anim-pop absolute z-40 flex flex-col pointer-events-auto rounded-[26px] overflow-hidden ${
-            fullBleed
-              ? 'top-16 right-4 w-80 h-[min(24rem,calc(100%-8.5rem))]'
-              : 'top-3 right-3 sm:top-4 sm:right-4 w-[calc(100%-1.5rem)] sm:w-80 h-[min(22rem,calc(100%-6.25rem))]'
+          className={`animate-panel-in absolute z-40 flex flex-col pointer-events-auto rounded-2xl overflow-hidden studio-hud ${
+            isFullscreen || isCinemaMode
+              ? 'top-14 right-4 w-80 h-[min(24rem,calc(100%-8.5rem))]'
+              : 'top-3 right-3 sm:top-4 sm:right-4 w-72 sm:w-80 h-[min(22rem,calc(100%-6.25rem))]'
           }`}
         >
-          <div className="flex items-center justify-between pl-4 pr-2 h-11 border-b border-white/10 shrink-0">
-            <span className="text-xs font-semibold text-white flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5 text-white/55" />
-              Чат зала
+          <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/[0.08]">
+            <span className="text-xs font-semibold text-[#FAFAFA] flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Чат зала</span>
             </span>
             <button
               type="button"
               onClick={toggleChatOverlay}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 cursor-pointer bg-transparent border-0"
-              title="Закрыть чат"
-              aria-label="Закрыть чат"
+              className="tactile text-zinc-400 hover:text-white p-1 rounded-md hover:bg-white/10 cursor-pointer"
+              title="Закрыть чат поверх видео"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{children}</div>
+          <div className="flex-1 overflow-hidden flex flex-col">{children}</div>
         </div>
       )}
     </div>

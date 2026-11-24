@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { MessageSquare, Users } from 'lucide-react';
 import {
   Navbar,
@@ -470,10 +470,8 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen min-h-dvh text-white flex flex-col relative">
-      <div className="glass-backdrop" aria-hidden="true">
-        <i />
-      </div>
+    <div className="min-h-screen text-[#FAFAFA] flex flex-col relative">
+      <div className="studio-backdrop" aria-hidden="true" />
 
       <a href="#main-content" className="skip-link">
         Перейти к основному содержимому
@@ -481,18 +479,15 @@ export function App() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div
-          role="status"
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] pointer-events-none px-4 w-full max-w-md flex justify-center"
-        >
+        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[100] pointer-events-none px-4 w-full max-w-md flex justify-center">
           <div
-            className={`anim-drop glass-strong pointer-events-auto flex items-center gap-2.5 h-11 pl-4 pr-5 rounded-full text-[13px] font-medium max-w-full ${
-              toastMessage.tone === 'error' ? 'text-[#ff9a92]' : 'text-white'
+            className={`animate-toast-in pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl studio-hud text-xs font-medium ${
+              toastMessage.tone === 'error' ? 'border-rose-500/40 text-rose-300' : 'text-zinc-100'
             }`}
           >
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${
-                toastMessage.tone === 'error' ? 'bg-[#ff453a]' : 'bg-[#30d158]'
+                toastMessage.tone === 'error' ? 'bg-rose-500' : 'bg-emerald-400'
               }`}
             />
             <span className="truncate">{toastMessage.text}</span>
@@ -528,7 +523,7 @@ export function App() {
           className={
             isCinemaMode
               ? 'fixed inset-0 z-50 bg-black flex items-center justify-center p-0 m-0'
-              : 'flex-1 px-3 pb-4 pt-3 sm:px-5 max-w-[1720px] w-full mx-auto flex flex-col gap-3'
+              : 'flex-1 p-2.5 sm:p-4 max-w-[1720px] w-full mx-auto flex flex-col gap-3'
           }
         >
           <div
@@ -618,75 +613,77 @@ export function App() {
               )}
             </div>
 
-            {/* Glass sidebar: viewers strip + Chat / Viewers tabs */}
+            {/* Unified Studio Sidebar (Chat + Live Viewers Tabs) */}
             {!isCinemaMode && isChatVisible && (
-              <aside className="lg:col-span-3 glass glass-refract rounded-[28px] flex flex-col h-[540px] lg:h-[calc(100dvh-7.75rem)] lg:sticky lg:top-[5.75rem] overflow-hidden anim-in">
-                <div className="p-2.5 space-y-2.5 shrink-0">
-                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-0.5">
+              <aside className="lg:col-span-3 studio-panel rounded-2xl flex flex-col h-[520px] lg:h-[calc(100vh-5.25rem)] overflow-hidden animate-panel-in">
+                {/* Compact Live Speaking Avatars + Tab Switcher */}
+                <div className="p-2.5 border-b border-white/[0.07] bg-[#0E0E12] space-y-2.5">
+                  {/* Live Viewers Strip */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 px-0.5">
                     {participants.map((p) => (
                       <div
                         key={p.id}
                         title={`${p.name}${p.role === 'host' ? ' (Ведущий)' : ''}`}
-                        className={`glass-thin flex items-center gap-1.5 h-7 pl-2.5 pr-3 rounded-full shrink-0 text-[11px] ${
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-full bg-[#18181E] border border-white/[0.07] shrink-0 text-[11px] ${
                           p.isSpeaking ? 'speaking-halo' : ''
                         }`}
                       >
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
                             p.isSpeaking
-                              ? 'bg-[#30d158] shadow-[0_0_6px_#30d158]'
+                              ? 'bg-emerald-400'
                               : !p.isAudioMuted
-                              ? 'bg-[#30d158]/60'
-                              : 'bg-white/30'
+                              ? 'bg-emerald-500/60'
+                              : 'bg-zinc-600'
                           }`}
                         />
-                        <span className="text-white/90 font-medium max-w-[84px] truncate">{p.name}</span>
+                        <span className="text-zinc-200 font-medium max-w-[80px] truncate">
+                          {p.name}
+                        </span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="glass-thin rounded-full p-1 flex gap-1" role="tablist">
+                  {/* Segmented Sidebar Tabs */}
+                  <div className="grid grid-cols-2 p-1 rounded-xl bg-[#15151A] gap-1">
                     <button
                       type="button"
-                      role="tab"
-                      aria-selected={sidebarTab === 'chat'}
                       onClick={() => {
                         setSidebarTab('chat');
                         setUnreadCount(0);
                       }}
-                      className={`flex-1 h-8 rounded-full text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer border-0 transition-all duration-300 ${
+                      className={`tactile py-1.5 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer ${
                         sidebarTab === 'chat'
-                          ? 'glass-seg-on'
-                          : 'bg-transparent text-white/60 hover:text-white'
+                          ? 'bg-[#24242C] text-[#FAFAFA]'
+                          : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Чат</span>
                       {unreadCount > 0 && sidebarTab !== 'chat' && (
-                        <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[#ff453a] text-white text-[10px] font-semibold tabular-nums flex items-center justify-center">
-                          {unreadCount > 99 ? '99+' : unreadCount}
+                        <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-semibold tabular-nums">
+                          {unreadCount}
                         </span>
                       )}
                     </button>
 
                     <button
                       type="button"
-                      role="tab"
-                      aria-selected={sidebarTab === 'participants'}
                       onClick={() => setSidebarTab('participants')}
-                      className={`flex-1 h-8 rounded-full text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer border-0 transition-all duration-300 ${
+                      className={`tactile py-1.5 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer ${
                         sidebarTab === 'participants'
-                          ? 'glass-seg-on'
-                          : 'bg-transparent text-white/60 hover:text-white'
+                          ? 'bg-[#24242C] text-[#FAFAFA]'
+                          : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
                       <Users className="w-3.5 h-3.5" />
-                      <span>Зрители · {participants.length}</span>
+                      <span>Зрители ({participants.length})</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-hidden border-t border-white/10">
+                {/* Tab Content */}
+                <div className="flex-1 overflow-hidden">
                   {sidebarTab === 'chat' ? (
                     <ChatPanel
                       messages={chatMessages}
