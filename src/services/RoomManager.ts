@@ -1,6 +1,6 @@
 import { Peer } from 'peerjs';
 import type { DataConnection, MediaConnection } from 'peerjs';
-import { APP_CONFIG } from '../config';
+import { APP_CONFIG, computeLivePlaybackState } from '../config';
 import type {
   Participant,
   PlaybackState,
@@ -20,6 +20,7 @@ export interface RoomCallbacks {
   onConnectionStatusChange: (status: 'connecting' | 'connected' | 'disconnected' | 'reconnecting') => void;
   onIncomingStream: (stream: MediaStream, senderId: string, isScreenShare: boolean) => void;
   onStreamStopped?: (senderId: string, isScreenShare: boolean) => void;
+  onActiveStreamerChanged?: (streamerId: string | null, streamerName?: string) => void;
 }
 
 export class RoomManager {
@@ -29,14 +30,17 @@ export class RoomManager {
   public isHost: boolean = false;
   public myProfile: Participant;
   private connections: Map<string, DataConnection> = new Map();
-  // Map calls by a composite key: `${peerId}_screen` and `${peerId}_voice`
   private mediaCalls: Map<string, MediaConnection> = new Map();
   private callbacks: RoomCallbacks;
-  private heartbeatTimer: any = null;
-  private serverKeepAliveTimer: any = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private serverKeepAliveTimer: ReturnType<typeof setInterval> | null = null;
+  private streamRecoveryTimers: Array<ReturnType<typeof setTimeout>> = [];
   private activeLocalStream: MediaStream | null = null;
   private activeVoiceStream: MediaStream | null = null;
   private isScreenSharing: boolean = false;
+  private hasRemoteScreenStream: boolean = false;
+  private activeStreamerId: string | null = null;
+  private activeStreamerName: string = '';
   private messageCounters: Map<string, { count: number; resetTime: number }> = new Map();
   private currentHostId: string = '';
   private participantsMap: Map<string, Participant> = new Map();
@@ -45,6 +49,73 @@ export class RoomManager {
   constructor(myProfile: Participant, callbacks: RoomCallbacks) {
     this.myProfile = myProfile;
     this.callbacks = callbacks;
+  }
+
+  private buildPeerOptions(): Record<string, unknown> {
+    const peerOptions: Record<string, unknown> = {
+      config: {
+        iceServers: APP_CONFIG.iceServers,
+        iceCandidatePoolSize: APP_CONFIG.iceCandidatePoolSize,
+        sdpSemantics: 'unified-plan',
+      },
+    };
+
+    if (APP_CONFIG.peerJsHost) {
+      peerOptions.host = APP_CONFIG.peerJsHost;
+      peerOptions.port = APP_CONFIG.peerJsPort;
+      peerOptions.path = APP_CONFIG.peerJsPath;
+      peerOptions.secure = APP_CONFIG.peerJsSecure;
+    }
+
+    return peerOptions;
+  }
+
+  private getTargetPeerIds(): string[] {
+    const ids = new Set<string>();
+    this.connections.forEach((_conn, peerId) => {
+      if (peerId && peerId !== this.myId) ids.add(peerId);
+    });
+    this.participantsMap.forEach((_p, peerId) => {
+      if (peerId && peerId !== this.myId) ids.add(peerId);
+    });
+    return Array.from(ids);
+  }
+
+  private sendToHostOrBroadcast(msg: SignalingMessage, excludePeerId?: string) {
+    if (this.isHost) {
+      this.broadcast(msg, excludePeerId);
+    } else {
+      const hostId = this.currentHostId || `syncwave-room-${this.roomId}`;
+      const hostConn = this.connections.get(hostId);
+      if (hostConn && hostConn.open) {
+        hostConn.send(msg);
+      }
+    }
+  }
+
+  private clearStreamRecoveryTimers() {
+    this.streamRecoveryTimers.forEach((t) => clearTimeout(t));
+    this.streamRecoveryTimers = [];
+  }
+
+  private scheduleStreamRecovery() {
+    this.clearStreamRecoveryTimers();
+    if (!this.activeStreamerId || this.activeStreamerId === this.myId) return;
+
+    const delays = [1200, 2800];
+    delays.forEach((delay) => {
+      const timer = setTimeout(() => {
+        if (
+          !this.hasRemoteScreenStream &&
+          !this.isScreenSharing &&
+          this.activeStreamerId &&
+          this.activeStreamerId !== this.myId
+        ) {
+          this.requestScreenStream();
+        }
+      }, delay);
+      this.streamRecoveryTimers.push(timer);
+    });
   }
 
   public async initHost(roomCode: string): Promise<string> {
@@ -56,20 +127,7 @@ export class RoomManager {
     return new Promise((resolve, reject) => {
       this.callbacks.onConnectionStatusChange('connecting');
 
-      const peerOptions: any = {
-        config: {
-          iceServers: APP_CONFIG.iceServers,
-        },
-      };
-
-      if (APP_CONFIG.peerJsHost) {
-        peerOptions.host = APP_CONFIG.peerJsHost;
-        peerOptions.port = APP_CONFIG.peerJsPort;
-        peerOptions.path = APP_CONFIG.peerJsPath;
-        peerOptions.secure = APP_CONFIG.peerJsSecure;
-      }
-
-      this.peer = new Peer(hostPeerId, peerOptions);
+      this.peer = new Peer(hostPeerId, this.buildPeerOptions());
 
       this.peer.on('open', (id) => {
         this.myId = id;
@@ -82,9 +140,8 @@ export class RoomManager {
       });
 
       this.peer.on('disconnected', () => {
-        // If peer disconnected from signaling server (e.g. idle timeout after ~15-20 min),
-        // reconnect to server without destroying the peer ID or active calls
         if (this.peer && !this.peer.destroyed) {
+          this.callbacks.onConnectionStatusChange('reconnecting');
           try {
             this.peer.reconnect();
           } catch (e) {
@@ -98,12 +155,14 @@ export class RoomManager {
           this.callbacks.onError('Комната с таким кодом уже активна. Попробуйте другой код.');
         } else if (err.type === 'server-error' || err.type === 'socket-error' || err.type === 'network') {
           this.callbacks.onError(
-            'Ошибка подключения к серверу сигнализации WebRTC (0.peerjs.com). В РФ некоторые провайдеры блокируют серверы сигнализации. Попробуйте включить VPN или подключиться через мобильный интернет.'
+            'Ошибка сигнального узла WebRTC (0.peerjs.com). Если провайдер ограничивает WebSocket, попробуйте обновить страницу или сменить сеть.'
           );
-        } else {
+        } else if (err.type !== 'peer-unavailable') {
           this.callbacks.onError(`Ошибка сети WebRTC: ${err.message || err.type}`);
         }
-        reject(err);
+        if (!this.myId) {
+          reject(err);
+        }
       });
 
       this.peer.on('connection', (conn) => {
@@ -111,8 +170,6 @@ export class RoomManager {
       });
 
       this.peer.on('call', (call) => {
-        // Auto-answer incoming media calls (voice or screen)
-        // If we have an active voice stream and the call is voice, answer with it
         const isScreen = call.metadata?.isScreenShare === true;
         if (!isScreen && this.activeVoiceStream) {
           call.answer(this.activeVoiceStream);
@@ -133,21 +190,6 @@ export class RoomManager {
     return new Promise((resolve, reject) => {
       this.callbacks.onConnectionStatusChange('connecting');
 
-      const peerOptions: any = {
-        config: {
-          iceServers: APP_CONFIG.iceServers,
-        },
-      };
-
-      if (APP_CONFIG.peerJsHost) {
-        peerOptions.host = APP_CONFIG.peerJsHost;
-        peerOptions.port = APP_CONFIG.peerJsPort;
-        peerOptions.path = APP_CONFIG.peerJsPath;
-        peerOptions.secure = APP_CONFIG.peerJsSecure;
-      }
-
-      // By providing an explicit alphanumeric ID, PeerJS skips the HTTP retrieveId() call (fetch to 0.peerjs.com/peerjs/id)
-      // which is frequently blocked or filtered by ISPs in the Russian Federation (РФ) and causes 'server-error'.
       let suffix = '';
       if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
         const buf = new Uint8Array(6);
@@ -157,11 +199,14 @@ export class RoomManager {
         suffix = Math.random().toString(36).substring(2, 10);
       }
       const guestPeerId = `syncwave-guest-${this.roomId}-${suffix}`;
-      this.peer = new Peer(guestPeerId, peerOptions);
+      this.peer = new Peer(guestPeerId, this.buildPeerOptions());
+
+      let resolved = false;
 
       this.peer.on('open', (id) => {
         this.myId = id;
         this.myProfile = { ...this.myProfile, id };
+        this.participantsMap.set(id, this.myProfile);
 
         const conn = this.peer!.connect(hostPeerId, {
           reliable: true,
@@ -182,7 +227,10 @@ export class RoomManager {
           conn.send(joinMsg);
           this.startHeartbeat();
           this.startServerKeepAlive();
-          resolve(id);
+          if (!resolved) {
+            resolved = true;
+            resolve(id);
+          }
         });
 
         conn.on('data', (data) => {
@@ -191,16 +239,17 @@ export class RoomManager {
 
         conn.on('close', () => {
           this.callbacks.onConnectionStatusChange('disconnected');
-          this.callbacks.onError('Соединение с ведущим комнаты разорвано.');
+          this.callbacks.onError('Соединение с ведущим комнаты завершено.');
         });
 
         conn.on('error', (err) => {
-          this.callbacks.onError(`Ошибка соединения с комнатой: ${err}`);
+          this.callbacks.onError(`Ошибка соединения с залом: ${err}`);
         });
       });
 
       this.peer.on('disconnected', () => {
         if (this.peer && !this.peer.destroyed) {
+          this.callbacks.onConnectionStatusChange('reconnecting');
           try {
             this.peer.reconnect();
           } catch (e) {
@@ -211,15 +260,19 @@ export class RoomManager {
 
       this.peer.on('error', (err: any) => {
         if (err.type === 'peer-unavailable') {
-          this.callbacks.onError(`Комната «${this.roomId}» не найдена или ведущий ещё не создал её.`);
+          if (!resolved) {
+            this.callbacks.onError(`Зал «${this.roomId}» не найден или ещё не открыт ведущим.`);
+            reject(err);
+          }
         } else if (err.type === 'server-error' || err.type === 'socket-error' || err.type === 'network') {
           this.callbacks.onError(
-            'Ошибка подключения к серверу сигнализации WebRTC (0.peerjs.com). В РФ провайдеры иногда блокируют или фильтруют этот узел. Попробуйте обновить страницу или подключиться через VPN / мобильный интернет.'
+            'Не удалось связаться с сигнальным сервером WebRTC (0.peerjs.com). Проверьте сеть или обновите страницу.'
           );
+          if (!resolved) reject(err);
         } else {
           this.callbacks.onError(`Ошибка сети: ${err.message || err.type}`);
+          if (!resolved) reject(err);
         }
-        reject(err);
       });
 
       this.peer.on('call', (call) => {
@@ -240,7 +293,7 @@ export class RoomManager {
         type: 'kick',
         roomId: this.roomId,
         senderId: this.myId,
-        payload: { reason: 'Комната заполнена (достигнут лимит участников)' },
+        payload: { targetId: conn.peer, reason: 'Зал заполнен (достигнут лимит зрителей)' },
         timestamp: Date.now(),
       } as SignalingMessage);
       conn.close();
@@ -249,9 +302,6 @@ export class RoomManager {
 
     conn.on('open', () => {
       this.connections.set(conn.peer, conn);
-      // Note: We deliberately do NOT immediately callPeerWithStream here.
-      // The join_request / room_state handshake ensures the participant's profile is fully registered
-      // and their WebRTC peer is ready to answer incoming media streams.
     });
 
     conn.on('data', (data) => {
@@ -259,27 +309,36 @@ export class RoomManager {
     });
 
     conn.on('close', () => {
-      this.connections.delete(conn.peer);
-      this.callbacks.onParticipantLeft(conn.peer);
+      const leftId = conn.peer;
+      this.connections.delete(leftId);
+      this.participantsMap.delete(leftId);
+
+      if (this.activeStreamerId === leftId) {
+        this.activeStreamerId = null;
+        this.activeStreamerName = '';
+        this.hasRemoteScreenStream = false;
+        this.callbacks.onActiveStreamerChanged?.(null);
+        this.callbacks.onStreamStopped?.(leftId, true);
+      }
+
+      this.callbacks.onParticipantLeft(leftId);
       this.broadcast({
         type: 'participant_left',
         roomId: this.roomId,
         senderId: this.myId,
-        payload: { participantId: conn.peer },
+        payload: { participantId: leftId },
         timestamp: Date.now(),
       });
     });
   }
 
   public callPeerWithStream(peerId: string, stream: MediaStream, isScreenShare: boolean) {
-    if (!this.peer || this.peer.destroyed) return;
+    if (!this.peer || this.peer.destroyed || !peerId || peerId === this.myId) return;
     const callKey = `out_${peerId}_${isScreenShare ? 'screen' : 'voice'}`;
 
-    // If an active outgoing media connection for this type exists, close it cleanly without triggering onStreamStopped
     const existingCall = this.mediaCalls.get(callKey);
     if (existingCall) {
       try {
-        // Detach event listeners so replacement doesn't trigger onStreamStopped
         existingCall.off('close');
         existingCall.off('stream');
         existingCall.close();
@@ -289,17 +348,23 @@ export class RoomManager {
 
     try {
       const call = this.peer.call(peerId, stream, {
-        metadata: { isScreenShare },
+        metadata: {
+          isScreenShare,
+          streamerName: this.myProfile.name,
+        },
       });
       if (call) {
-        // Track the outgoing call so we can close it when stopping the stream
         this.mediaCalls.set(callKey, call);
 
-        // Client-side Bandwidth Optimization: limit video bitrate if sharing screen
         if (isScreenShare) {
           try {
             const pc = (call as any).peerConnection as RTCPeerConnection;
             if (pc && pc.getSenders) {
+              const viewerCount = Math.max(1, this.getTargetPeerIds().length);
+              // Scale bitrate cleanly for 2+ simultaneous viewers so host uplink stays smooth
+              const targetMaxBitrate =
+                viewerCount <= 2 ? 3500000 : Math.max(1500000, Math.floor(7000000 / viewerCount));
+
               const applyBitrateLimit = () => {
                 const videoSender = pc.getSenders().find((s) => s.track?.kind === 'video');
                 if (videoSender && videoSender.getParameters) {
@@ -307,12 +372,11 @@ export class RoomManager {
                   if (!params.encodings || params.encodings.length === 0) {
                     params.encodings = [{}];
                   }
-                  // Cap outgoing video bitrate at 2.5 Mbps to protect host uplink
-                  params.encodings[0].maxBitrate = 2500000;
+                  params.encodings[0].maxBitrate = targetMaxBitrate;
                   videoSender.setParameters(params).catch(() => {});
                 }
               };
-              setTimeout(applyBitrateLimit, 500);
+              setTimeout(applyBitrateLimit, 450);
             }
           } catch {}
         }
@@ -334,7 +398,6 @@ export class RoomManager {
     const isScreen = call.metadata?.isScreenShare === true;
     const callKey = `in_${call.peer}_${isScreen ? 'screen' : 'voice'}`;
 
-    // Clean up any stale incoming call for this peer/type
     const existingCall = this.mediaCalls.get(callKey);
     if (existingCall && existingCall !== call) {
       try {
@@ -348,23 +411,34 @@ export class RoomManager {
     this.mediaCalls.set(callKey, call);
 
     call.on('stream', (remoteStream) => {
+      if (isScreen) {
+        this.hasRemoteScreenStream = true;
+        this.activeStreamerId = call.peer;
+        const senderName =
+          call.metadata?.streamerName || this.participantsMap.get(call.peer)?.name || 'Участник';
+        this.activeStreamerName = senderName;
+        this.clearStreamRecoveryTimers();
+        this.callbacks.onActiveStreamerChanged?.(call.peer, senderName);
+      }
+
       this.callbacks.onIncomingStream(remoteStream, call.peer, isScreen);
 
-      // Listen for remote track endings
       remoteStream.getTracks().forEach((track) => {
         track.onended = () => {
-          if (this.callbacks.onStreamStopped) {
-            this.callbacks.onStreamStopped(call.peer, isScreen);
+          if (isScreen) {
+            this.hasRemoteScreenStream = false;
           }
+          this.callbacks.onStreamStopped?.(call.peer, isScreen);
         };
       });
     });
 
     call.on('close', () => {
       this.mediaCalls.delete(callKey);
-      if (this.callbacks.onStreamStopped) {
-        this.callbacks.onStreamStopped(call.peer, isScreen);
+      if (isScreen) {
+        this.hasRemoteScreenStream = false;
       }
+      this.callbacks.onStreamStopped?.(call.peer, isScreen);
     });
 
     call.on('error', (err) => {
@@ -381,8 +455,8 @@ export class RoomManager {
       tracker.resetTime = now + 1000;
     } else {
       tracker.count++;
-      if (tracker.count > 15) {
-        return true; // Exceeded limit (max 15 messages/sec)
+      if (tracker.count > 20) {
+        return true;
       }
     }
     this.messageCounters.set(peerId, tracker);
@@ -392,7 +466,6 @@ export class RoomManager {
   private handleMessage(msg: SignalingMessage, conn: DataConnection) {
     if (msg.roomId !== this.roomId) return;
 
-    // Rate Limiting check per connection
     if (this.checkRateLimit(conn.peer)) {
       console.warn(`Rate limit exceeded for peer: ${conn.peer}, dropping message ${msg.type}`);
       return;
@@ -412,40 +485,45 @@ export class RoomManager {
           this.participantsMap.set(conn.peer, participant);
           this.callbacks.onParticipantJoined(participant);
 
-          // Send full room state (all participants + current playbackState) back to the newly connected participant
+          const livePlayback = this.lastPlaybackState
+            ? (computeLivePlaybackState(this.lastPlaybackState) as PlaybackState)
+            : null;
+
           conn.send({
             type: 'room_state',
             roomId: this.roomId,
             senderId: this.myId,
             payload: {
-              isScreenSharing: Boolean(this.activeLocalStream && this.isScreenSharing),
+              isScreenSharing: Boolean(this.activeStreamerId),
+              activeStreamerId: this.activeStreamerId,
+              activeStreamerName: this.activeStreamerName,
               hostId: this.myId,
               hostProfile: this.myProfile,
               participants: Array.from(this.participantsMap.values()),
-              playbackState: this.lastPlaybackState,
+              playbackState: livePlayback,
             },
             timestamp: Date.now(),
           } as SignalingMessage);
 
-          // If host is screen sharing, call the new participant with a small delay to ensure peer is ready
+          // If host is sharing screen, immediately push stream to the newcomer
           if (this.activeLocalStream && this.isScreenSharing) {
             setTimeout(() => {
               if (this.activeLocalStream && this.isScreenSharing) {
                 this.callPeerWithStream(conn.peer, this.activeLocalStream, true);
               }
-            }, 300);
+            }, 220);
           }
 
-          // If host has active voice, connect voice stream to the new participant as well
+          // If host has active voice, connect voice stream to the newcomer
           if (this.activeVoiceStream) {
             setTimeout(() => {
               if (this.activeVoiceStream) {
                 this.callPeerWithStream(conn.peer, this.activeVoiceStream, false);
               }
-            }, 500);
+            }, 380);
           }
 
-          // Broadcast to everyone else
+          // Broadcast newcomer to all other participants (so any guest who is streaming/speaking also calls newcomer!)
           this.broadcast(
             {
               type: 'participant_joined',
@@ -470,8 +548,17 @@ export class RoomManager {
             this.callbacks.onParticipantJoined(p);
           });
         } else if (msg.payload?.hostProfile) {
+          this.participantsMap.set(msg.payload.hostProfile.id, msg.payload.hostProfile);
           this.callbacks.onParticipantJoined(msg.payload.hostProfile);
         }
+
+        if (msg.payload?.activeStreamerId) {
+          this.activeStreamerId = msg.payload.activeStreamerId;
+          this.activeStreamerName = msg.payload.activeStreamerName || 'Ведущий';
+          this.callbacks.onActiveStreamerChanged?.(this.activeStreamerId, this.activeStreamerName);
+          this.scheduleStreamRecovery();
+        }
+
         if (msg.payload?.playbackState) {
           this.lastPlaybackState = msg.payload.playbackState;
           this.callbacks.onPlaybackSync(msg.payload.playbackState);
@@ -479,39 +566,115 @@ export class RoomManager {
         break;
       }
 
+      case 'participant_joined': {
+        const newPeer = msg.payload as Participant;
+        if (newPeer?.id) {
+          this.participantsMap.set(newPeer.id, newPeer);
+          this.callbacks.onParticipantJoined(newPeer);
+
+          // Mesh media: if WE (even as a guest!) are currently sharing screen or voice, call the newly joined viewer directly!
+          if (this.activeLocalStream && this.isScreenSharing && newPeer.id !== this.myId) {
+            setTimeout(() => {
+              if (this.activeLocalStream && this.isScreenSharing) {
+                this.callPeerWithStream(newPeer.id, this.activeLocalStream, true);
+              }
+            }, 250);
+          }
+          if (this.activeVoiceStream && newPeer.id !== this.myId) {
+            setTimeout(() => {
+              if (this.activeVoiceStream) {
+                this.callPeerWithStream(newPeer.id, this.activeVoiceStream, false);
+              }
+            }, 420);
+          }
+        }
+        break;
+      }
+
+      case 'participant_left': {
+        const leftId = msg.payload?.participantId;
+        if (leftId) {
+          this.participantsMap.delete(leftId);
+          if (this.activeStreamerId === leftId) {
+            this.activeStreamerId = null;
+            this.activeStreamerName = '';
+            this.hasRemoteScreenStream = false;
+            this.clearStreamRecoveryTimers();
+            this.callbacks.onActiveStreamerChanged?.(null);
+            this.callbacks.onStreamStopped?.(leftId, true);
+          }
+          this.callbacks.onParticipantLeft(leftId);
+        }
+        break;
+      }
+
+      case 'stream_started': {
+        const { streamerId, streamerName } = msg.payload || {};
+        if (streamerId) {
+          this.activeStreamerId = streamerId;
+          this.activeStreamerName = streamerName || 'Участник';
+          this.callbacks.onActiveStreamerChanged?.(streamerId, this.activeStreamerName);
+
+          if (streamerId !== this.myId) {
+            // If another user took over screen sharing while we were sharing, cleanly stop our local share
+            if (this.isScreenSharing && this.activeLocalStream) {
+              this.activeLocalStream.getTracks().forEach((t) => t.stop());
+              this.activeLocalStream = null;
+              this.isScreenSharing = false;
+            }
+            this.hasRemoteScreenStream = false;
+            this.scheduleStreamRecovery();
+          }
+
+          if (this.isHost) {
+            this.broadcast(msg, conn.peer);
+          }
+        }
+        break;
+      }
+
       case 'request_screen_stream': {
-        // If participant asks for screen stream re-send (e.g. negotiation retry or reconnect)
-        if (this.isHost && this.activeLocalStream && this.isScreenSharing) {
-          this.callPeerWithStream(conn.peer, this.activeLocalStream, true);
+        const requesterId = msg.payload?.requesterId || conn.peer;
+        if (this.activeLocalStream && this.isScreenSharing && requesterId !== this.myId) {
+          this.callPeerWithStream(requesterId, this.activeLocalStream, true);
+        } else if (
+          this.isHost &&
+          this.activeStreamerId &&
+          this.activeStreamerId !== this.myId
+        ) {
+          // Forward request to the guest who is currently streaming
+          const streamerConn = this.connections.get(this.activeStreamerId);
+          if (streamerConn && streamerConn.open) {
+            streamerConn.send({
+              type: 'request_screen_stream',
+              roomId: this.roomId,
+              senderId: this.myId,
+              payload: { requesterId },
+              timestamp: Date.now(),
+            } as SignalingMessage);
+          }
         }
         break;
       }
 
       case 'stream_stopped': {
         const { isScreen } = msg.payload || {};
-        if (this.callbacks.onStreamStopped) {
-          this.callbacks.onStreamStopped(msg.senderId, isScreen !== false);
+        const screenFlag = isScreen !== false;
+        if (screenFlag && this.activeStreamerId === msg.senderId) {
+          this.activeStreamerId = null;
+          this.activeStreamerName = '';
+          this.hasRemoteScreenStream = false;
+          this.clearStreamRecoveryTimers();
+          this.callbacks.onActiveStreamerChanged?.(null);
         }
+        this.callbacks.onStreamStopped?.(msg.senderId, screenFlag);
         if (this.isHost) {
-          this.broadcast(msg, msg.senderId);
+          this.broadcast(msg, conn.peer);
         }
         break;
       }
 
-      case 'participant_joined':
-        if (msg.payload?.id) {
-          this.participantsMap.set(msg.payload.id, msg.payload);
-        }
-        this.callbacks.onParticipantJoined(msg.payload);
-        break;
-
-      case 'participant_left':
-        this.participantsMap.delete(msg.payload.participantId);
-        this.callbacks.onParticipantLeft(msg.payload.participantId);
-        break;
-
       case 'playback_sync':
-        // Synchronize playback only if message originated from host, or if host is broadcasting
         if (!this.isHost && !isFromHost) {
           console.warn('Playback sync ignored from non-host peer:', conn.peer);
           return;
@@ -519,13 +682,12 @@ export class RoomManager {
         this.lastPlaybackState = msg.payload;
         this.callbacks.onPlaybackSync(msg.payload);
         if (this.isHost) {
-          this.broadcast(msg, msg.senderId);
+          this.broadcast(msg, conn.peer);
         }
         break;
 
       case 'chat_message': {
         const msgPayload = msg.payload as ChatMessage;
-        // Client-side DoS mitigation: validate size of file / dataUrl
         if (msgPayload?.file) {
           const size = msgPayload.file.size || 0;
           const dataUrlLen = msgPayload.file.dataUrl?.length || 0;
@@ -536,13 +698,12 @@ export class RoomManager {
         }
         this.callbacks.onChatMessage(msgPayload);
         if (this.isHost) {
-          this.broadcast(msg, msg.senderId);
+          this.broadcast(msg, conn.peer);
         }
         break;
       }
 
       case 'transfer_host':
-        // Only current host can transfer host privileges
         if (!isFromHost && !this.isHost) {
           console.warn('Unauthorized transfer_host attempt from:', conn.peer);
           return;
@@ -558,7 +719,6 @@ export class RoomManager {
         break;
 
       case 'kick':
-        // Only host is allowed to kick participants; host cannot be kicked by guests
         if (!isFromHost) {
           console.warn('Unauthorized kick attempt ignored from:', conn.peer);
           return;
@@ -575,7 +735,7 @@ export class RoomManager {
         }
         this.callbacks.onParticipantUpdated(msg.payload);
         if (this.isHost) {
-          this.broadcast(msg, msg.senderId);
+          this.broadcast(msg, conn.peer);
         }
         break;
 
@@ -608,15 +768,7 @@ export class RoomManager {
       payload: state,
       timestamp: Date.now(),
     };
-
-    if (this.isHost) {
-      this.broadcast(msg);
-    } else {
-      const hostConn = this.connections.get(this.currentHostId || `syncwave-room-${this.roomId}`);
-      if (hostConn && hostConn.open) {
-        hostConn.send(msg);
-      }
-    }
+    this.sendToHostOrBroadcast(msg);
   }
 
   public updateMyProfile(partial: Partial<Participant>) {
@@ -637,29 +789,18 @@ export class RoomManager {
       payload: this.myProfile,
       timestamp: Date.now(),
     };
-
-    if (this.isHost) {
-      this.broadcast(msg);
-    } else {
-      const hostConn = this.connections.get(this.currentHostId || `syncwave-room-${this.roomId}`);
-      if (hostConn && hostConn.open) {
-        hostConn.send(msg);
-      }
-    }
+    this.sendToHostOrBroadcast(msg);
   }
 
   public requestScreenStream() {
-    if (this.isHost) return;
-    const hostConn = this.connections.get(`syncwave-room-${this.roomId}`);
-    if (hostConn && hostConn.open) {
-      hostConn.send({
-        type: 'request_screen_stream',
-        roomId: this.roomId,
-        senderId: this.myId,
-        payload: null,
-        timestamp: Date.now(),
-      } as SignalingMessage);
-    }
+    const msg: SignalingMessage = {
+      type: 'request_screen_stream',
+      roomId: this.roomId,
+      senderId: this.myId,
+      payload: { requesterId: this.myId },
+      timestamp: Date.now(),
+    };
+    this.sendToHostOrBroadcast(msg);
   }
 
   public sendChatMessage(text: string, file?: import('../types').ChatAttachment) {
@@ -680,29 +821,21 @@ export class RoomManager {
       timestamp: Date.now(),
     };
 
-    if (this.isHost) {
-      this.broadcast(msg);
-      this.callbacks.onChatMessage(chatMsg);
-    } else {
-      const hostConn = this.connections.get(`syncwave-room-${this.roomId}`);
-      if (hostConn && hostConn.open) {
-        hostConn.send(msg);
-        this.callbacks.onChatMessage(chatMsg);
-      }
-    }
+    this.sendToHostOrBroadcast(msg);
+    this.callbacks.onChatMessage(chatMsg);
   }
 
   public sendVoiceStream(stream: MediaStream) {
     this.activeVoiceStream = stream;
 
-    this.connections.forEach((_conn, peerId) => {
+    this.getTargetPeerIds().forEach((peerId) => {
       this.callPeerWithStream(peerId, stream, false);
     });
   }
 
   public stopVoiceStream() {
     this.activeVoiceStream = null;
-    this.connections.forEach((_conn, peerId) => {
+    this.getTargetPeerIds().forEach((peerId) => {
       const callKey = `out_${peerId}_voice`;
       if (this.mediaCalls.has(callKey)) {
         try {
@@ -719,32 +852,49 @@ export class RoomManager {
       payload: { isScreen: false },
       timestamp: Date.now(),
     };
-    if (this.isHost) {
-      this.broadcast(msg);
-    } else {
-      const hostConn = this.connections.get(`syncwave-room-${this.roomId}`);
-      if (hostConn && hostConn.open) {
-        hostConn.send(msg);
-      }
-    }
+    this.sendToHostOrBroadcast(msg);
   }
 
   public sendScreenStream(stream: MediaStream) {
     this.activeLocalStream = stream;
     this.isScreenSharing = true;
+    this.activeStreamerId = this.myId;
+    this.activeStreamerName = this.myProfile.name;
+    this.updateMyProfile({ isStreamingScreen: true });
+    this.callbacks.onActiveStreamerChanged?.(this.myId, this.myProfile.name);
 
-    this.connections.forEach((_conn, peerId) => {
+    const startMsg: SignalingMessage = {
+      type: 'stream_started',
+      roomId: this.roomId,
+      senderId: this.myId,
+      payload: {
+        streamerId: this.myId,
+        streamerName: this.myProfile.name,
+      },
+      timestamp: Date.now(),
+    };
+    this.sendToHostOrBroadcast(startMsg);
+
+    this.getTargetPeerIds().forEach((peerId) => {
       this.callPeerWithStream(peerId, stream, true);
     });
   }
 
   public stopScreenStream() {
-    if (this.activeLocalStream && this.isScreenSharing) {
-      this.activeLocalStream.getTracks().forEach((track) => track.stop());
+    if (this.activeLocalStream || this.isScreenSharing) {
+      if (this.activeLocalStream) {
+        this.activeLocalStream.getTracks().forEach((track) => track.stop());
+      }
       this.activeLocalStream = null;
       this.isScreenSharing = false;
+      if (this.activeStreamerId === this.myId) {
+        this.activeStreamerId = null;
+        this.activeStreamerName = '';
+        this.callbacks.onActiveStreamerChanged?.(null);
+      }
+      this.updateMyProfile({ isStreamingScreen: false });
 
-      this.connections.forEach((_conn, peerId) => {
+      this.getTargetPeerIds().forEach((peerId) => {
         const callKey = `out_${peerId}_screen`;
         if (this.mediaCalls.has(callKey)) {
           try {
@@ -761,14 +911,7 @@ export class RoomManager {
         payload: { isScreen: true },
         timestamp: Date.now(),
       };
-      if (this.isHost) {
-        this.broadcast(msg);
-      } else {
-        const hostConn = this.connections.get(`syncwave-room-${this.roomId}`);
-        if (hostConn && hostConn.open) {
-          hostConn.send(msg);
-        }
-      }
+      this.sendToHostOrBroadcast(msg);
     }
   }
 
@@ -780,17 +923,19 @@ export class RoomManager {
         type: 'kick',
         roomId: this.roomId,
         senderId: this.myId,
-        payload: { targetId, reason: 'Исключён ведущим комнаты' },
+        payload: { targetId, reason: 'Исключён ведущим зала' },
         timestamp: Date.now(),
       } as SignalingMessage);
       conn.close();
       this.connections.delete(targetId);
+      this.participantsMap.delete(targetId);
     }
   }
 
   public transferHost(newHostId: string) {
     if (!this.isHost) return;
     this.isHost = false;
+    this.currentHostId = newHostId;
     this.broadcast({
       type: 'transfer_host',
       roomId: this.roomId,
@@ -802,6 +947,7 @@ export class RoomManager {
   }
 
   private startHeartbeat() {
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     this.heartbeatTimer = setInterval(() => {
       if (this.connections.size > 0) {
         this.broadcast({
@@ -815,26 +961,17 @@ export class RoomManager {
     }, APP_CONFIG.heartbeatIntervalMs);
   }
 
-  /**
-   * Signaling Server Keep-Alive:
-   * Public WebRTC signaling servers (e.g. 0.peerjs.com or custom servers) close
-   * idle WebSocket connections if no ping is sent within 45-60 seconds, which
-   * causes the host to disconnect from signaling and prevents new peers from joining after 20 minutes.
-   * This keep-alive ensures the room stays active and joinable indefinitely.
-   */
   private startServerKeepAlive() {
     if (this.serverKeepAliveTimer) clearInterval(this.serverKeepAliveTimer);
     this.serverKeepAliveTimer = setInterval(() => {
       if (this.peer && !this.peer.destroyed) {
         if (this.peer.disconnected) {
-          // Reconnect to signaling server if disconnected
           try {
             this.peer.reconnect();
           } catch (e) {
             console.warn('Keep-alive reconnect attempt failed:', e);
           }
         } else {
-          // Send HEARTBEAT message on the underlying PeerJS socket connection
           try {
             const socket: any = (this.peer as any).socket;
             if (socket && typeof socket._send === 'function') {
@@ -843,12 +980,13 @@ export class RoomManager {
           } catch {}
         }
       }
-    }, 25000); // Send keep-alive every 25 seconds
+    }, 25000);
   }
 
   public destroy() {
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     if (this.serverKeepAliveTimer) clearInterval(this.serverKeepAliveTimer);
+    this.clearStreamRecoveryTimers();
     this.stopScreenStream();
     this.stopVoiceStream();
     this.connections.forEach((conn) => conn.close());
@@ -858,6 +996,8 @@ export class RoomManager {
     this.messageCounters.clear();
     this.participantsMap.clear();
     this.lastPlaybackState = null;
+    this.activeStreamerId = null;
+    this.hasRemoteScreenStream = false;
     if (this.peer) {
       this.peer.destroy();
       this.peer = null;

@@ -8,8 +8,9 @@ import {
   Link as LinkIcon,
   Check,
   Film,
-  MessageSquare,
-  MessageSquareOff,
+  PanelRightClose,
+  PanelRightOpen,
+  EyeOff,
   X,
   ChevronRight,
 } from 'lucide-react';
@@ -35,13 +36,13 @@ interface RoomControlsProps {
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'reconnecting';
   isChatVisible?: boolean;
   onToggleChat?: () => void;
+  onEnterCinemaMode?: () => void;
 }
 
 export const RoomControls: React.FC<RoomControlsProps> = ({
   roomCode,
   isHost,
   isScreenSharing,
-  hasActiveScreenStream = false,
   onStartScreenShare,
   onStopScreenShare,
   onDirectUrlSubmit,
@@ -54,6 +55,7 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
   onNotify,
   isChatVisible = true,
   onToggleChat,
+  onEnterCinemaMode,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isMicActive, setIsMicActive] = useState(false);
@@ -140,158 +142,155 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
     }
   };
 
-  const isSharingActive = isScreenSharing || (isHost && hasActiveScreenStream);
-
   return (
-    <div className="ios-material p-2 sm:p-2.5 rounded-[22px] flex flex-wrap items-center justify-between gap-2 animate-dock-3d">
-      {/* Left: Share & Video Source */}
-      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+    <div className="studio-panel px-3 py-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-2">
+      {/* Left: Invite & Source */}
+      <div className="flex items-center gap-1.5 flex-wrap">
         <button
           type="button"
           onClick={handleCopyLink}
-          className="ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-xs font-medium text-[#F5F5F7] border border-white/[0.08] cursor-pointer"
-          title="Скопировать ссылку-приглашение"
+          className="tactile h-9 px-3 rounded-xl bg-[#18181D] hover:bg-[#222229] border border-white/[0.07] text-xs font-medium text-zinc-200 flex items-center gap-1.5 cursor-pointer"
+          title="Скопировать пригласительную ссылку"
         >
           {copied ? (
-            <Check className="w-3.5 h-3.5 text-[#30D158] animate-ios-pop" />
+            <Check className="w-3.5 h-3.5 text-emerald-400" />
           ) : (
-            <Share2 className="w-3.5 h-3.5 text-[#0A84FF]" />
+            <Share2 className="w-3.5 h-3.5 text-zinc-400" />
           )}
-          <span>{copied ? 'Скопировано' : 'Пригласить'}</span>
+          <span>{copied ? 'Ссылка скопирована' : 'Пригласить'}</span>
         </button>
 
         {isHost && (
           <button
             type="button"
             onClick={() => setShowUrlModal(true)}
-            className="ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-xs font-medium text-[#F5F5F7] border border-white/[0.08] cursor-pointer"
+            className="tactile h-9 px-3 rounded-xl bg-[#18181D] hover:bg-[#222229] border border-white/[0.07] text-xs font-medium text-zinc-200 flex items-center gap-1.5 cursor-pointer"
+            title="Вставить прямую ссылку на видео"
           >
-            <LinkIcon className="w-3.5 h-3.5 text-[#5AC8FA]" />
-            <span className="hidden xs:inline">Источник</span>
-            <span className="xs:hidden">Видео</span>
+            <LinkIcon className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Ссылка на видео</span>
           </button>
         )}
       </div>
 
-      <div className="h-5 w-px bg-white/10 hidden md:block" aria-hidden="true" />
-
-      {/* Center: FaceTime-style Media Dock */}
-      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+      {/* Center: Broadcast, Voice & View Controls */}
+      <div className="flex items-center gap-1.5 flex-wrap">
         <button
           type="button"
-          onClick={isSharingActive ? onStopScreenShare : onStartScreenShare}
-          className={`ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold border cursor-pointer ${
-            isSharingActive
-              ? 'bg-[#FF453A] border-[#FF6961]/50 text-white shadow-[0_6px_18px_rgba(255,69,58,0.35)]'
-              : 'bg-white/[0.08] hover:bg-white/[0.14] border-white/[0.08] text-[#F5F5F7]'
+          onClick={isScreenSharing ? onStopScreenShare : onStartScreenShare}
+          className={`tactile h-9 px-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer border ${
+            isScreenSharing
+              ? 'bg-rose-500 hover:bg-rose-600 border-rose-400/40 text-white'
+              : 'bg-[#FAFAFA] hover:bg-white border-transparent text-[#09090B]'
           }`}
-          title={isSharingActive ? 'Остановить трансляцию экрана' : 'Транслировать вкладку со звуком'}
+          title={
+            isScreenSharing
+              ? 'Остановить демонстрацию вашего экрана'
+              : 'Поделиться вкладкой браузера или экраном со звуком'
+          }
         >
-          <ScreenShare className="w-4 h-4" />
-          <span className="hidden sm:inline">
-            {isSharingActive ? 'Остановить экран' : 'Трансляция экрана'}
-          </span>
+          <ScreenShare className="w-3.5 h-3.5" />
+          <span>{isScreenSharing ? 'Завершить эфир' : 'Экран в эфир'}</span>
         </button>
 
         <button
           type="button"
           onClick={toggleMic}
-          className={`ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold border cursor-pointer ${
+          className={`tactile h-9 px-3 rounded-xl text-xs font-medium flex items-center gap-1.5 border cursor-pointer ${
             isMicActive
-              ? 'bg-[#30D158]/20 border-[#30D158]/45 text-[#30D158] shadow-[0_4px_16px_rgba(48,209,88,0.2)]'
-              : 'bg-white/[0.08] hover:bg-white/[0.14] border-white/[0.08] text-white/85'
+              ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
+              : 'bg-[#18181D] hover:bg-[#222229] border-white/[0.07] text-zinc-300'
           }`}
           title={isMicActive ? 'Выключить микрофон' : 'Включить голосовой чат'}
         >
           {isMicActive ? (
             <>
-              <Mic className="w-4 h-4 animate-pulse" />
-              <span>Микрофон вкл</span>
+              <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <span className="hidden sm:inline">Голос вкл</span>
             </>
           ) : (
             <>
-              <MicOff className="w-4 h-4 text-white/60" />
-              <span className="hidden xs:inline">Микрофон</span>
+              <MicOff className="w-3.5 h-3.5 text-zinc-500" />
+              <span className="hidden sm:inline">Микрофон</span>
             </>
           )}
         </button>
+
+        {onEnterCinemaMode && (
+          <button
+            type="button"
+            onClick={onEnterCinemaMode}
+            className="tactile h-9 px-3 rounded-xl bg-[#18181D] hover:bg-[#222229] border border-white/[0.07] text-xs font-medium text-zinc-300 hover:text-white flex items-center gap-1.5 cursor-pointer"
+            title="Выключить весь интерфейс для просмотра фильма (клавиша H)"
+          >
+            <EyeOff className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="hidden md:inline">Режим кино</span>
+          </button>
+        )}
 
         {onToggleChat && (
           <button
             type="button"
             onClick={onToggleChat}
-            className={`ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium border cursor-pointer ${
+            className={`tactile h-9 px-3 rounded-xl text-xs font-medium border flex items-center gap-1.5 cursor-pointer ${
               isChatVisible
-                ? 'bg-white/[0.08] hover:bg-white/[0.14] border-white/[0.08] text-white/85'
-                : 'bg-[#0A84FF]/20 border-[#0A84FF]/40 text-[#5AC8FA]'
+                ? 'bg-[#18181D] hover:bg-[#222229] border-white/[0.07] text-zinc-300'
+                : 'bg-white/[0.12] border-white/20 text-white'
             }`}
-            title={isChatVisible ? 'Скрыть боковую панель' : 'Показать боковую панель'}
+            title={isChatVisible ? 'Свернуть боковую панель' : 'Открыть боковую панель'}
           >
             {isChatVisible ? (
-              <>
-                <MessageSquareOff className="w-4 h-4 text-white/65" />
-                <span className="hidden sm:inline">Скрыть чат</span>
-              </>
+              <PanelRightClose className="w-3.5 h-3.5 text-zinc-400" />
             ) : (
-              <>
-                <MessageSquare className="w-4 h-4" />
-                <span className="hidden sm:inline">Панель</span>
-              </>
+              <PanelRightOpen className="w-3.5 h-3.5" />
             )}
+            <span className="hidden lg:inline">{isChatVisible ? 'Скрыть панель' : 'Чат'}</span>
           </button>
         )}
       </div>
 
-      <div className="h-5 w-px bg-white/10 hidden md:block" aria-hidden="true" />
-
-      {/* Right: Leave Room */}
+      {/* Right: Leave */}
       <button
         type="button"
         onClick={handleLeave}
-        className="ios-press flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#FF453A]/18 hover:bg-[#FF453A]/30 border border-[#FF453A]/35 text-[#FF6961] hover:text-white text-xs font-semibold cursor-pointer"
-        title="Покинуть комнату"
+        className="tactile h-9 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 hover:text-rose-300 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+        title="Выйти из зала"
       >
         <LogOut className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">Выйти</span>
       </button>
 
-      {/* iOS 17 Sheet Modal for Media Source */}
+      {/* Media Source Modal */}
       {showUrlModal && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm"
           onClick={() => setShowUrlModal(false)}
         >
           <div
-            className="animate-ios-sheet ios-material-elevated w-full sm:max-w-lg rounded-t-[28px] sm:rounded-[28px] p-5 sm:p-6 space-y-5"
+            className="animate-panel-in studio-panel w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* iOS Sheet Grabber */}
-            <div className="w-9 h-1 rounded-full bg-white/20 mx-auto sm:hidden" />
-
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-[10px] bg-[#0A84FF]/20 flex items-center justify-center">
-                  <Film className="w-4 h-4 text-[#0A84FF]" />
-                </div>
-                <h3 className="text-[16px] font-semibold text-white sf-display">
-                  Источник видео
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
+              <div className="flex items-center gap-2">
+                <Film className="w-4 h-4 text-zinc-400" />
+                <h3 className="text-sm font-semibold text-[#FAFAFA] font-display">
+                  Открыть видео по ссылке
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowUrlModal(false)}
-                className="ios-press p-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.16] text-white/60 hover:text-white cursor-pointer"
+                className="tactile p-1 rounded-lg hover:bg-white/[0.08] text-zinc-400 hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Grouped Presets */}
             <div className="space-y-2">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-white/45 px-1">
-                Демо-видео (HD MP4)
+              <div className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+                Готовые HD-ролики для проверки синхронизации
               </div>
-              <div className="rounded-[18px] overflow-hidden border border-white/[0.08] bg-white/[0.04] divide-y divide-white/[0.07]">
+              <div className="rounded-xl overflow-hidden border border-white/[0.07] bg-[#141418] divide-y divide-white/[0.06]">
                 {demoPresets.map((preset) => (
                   <button
                     key={preset.url}
@@ -300,38 +299,37 @@ export const RoomControls: React.FC<RoomControlsProps> = ({
                       onDirectUrlSubmit(preset.url);
                       setShowUrlModal(false);
                     }}
-                    className="ios-press w-full px-4 py-3 flex items-center justify-between text-left hover:bg-white/[0.07] transition-colors cursor-pointer"
+                    className="tactile w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-white/[0.05] cursor-pointer"
                   >
                     <div className="min-w-0 pr-3">
-                      <div className="text-[13px] font-medium text-white truncate">
+                      <div className="text-xs font-medium text-zinc-200 truncate">
                         {preset.name}
                       </div>
-                      <div className="text-[11px] text-white/40 truncate">{preset.url}</div>
+                      <div className="text-[11px] text-zinc-500 truncate">{preset.url}</div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
+                    <ChevronRight className="w-4 h-4 text-zinc-600 shrink-0" />
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Direct URL Form */}
-            <form onSubmit={handleUrlSubmit} className="space-y-2.5 pt-1">
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-white/45 px-1">
-                Прямая ссылка (.mp4 / .webm)
+            <form onSubmit={handleUrlSubmit} className="space-y-2 pt-1">
+              <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+                Прямой адрес файла (.mp4, .webm)
               </label>
               <div className="flex gap-2">
                 <input
                   type="url"
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
-                  placeholder="https://example.com/video.mp4"
-                  className="ios-input flex-1 px-4 py-2.5 text-[13px]"
+                  placeholder="https://example.com/movie.mp4"
+                  className="studio-input flex-1 rounded-xl px-3.5 py-2.5 text-xs"
                 />
                 <button
                   type="submit"
-                  className="ios-press px-4 py-2.5 rounded-[14px] bg-[#0A84FF] hover:brightness-110 text-white text-xs font-semibold cursor-pointer"
+                  className="tactile px-4 py-2.5 rounded-xl bg-[#FAFAFA] hover:bg-white text-[#09090B] text-xs font-semibold cursor-pointer"
                 >
-                  Открыть
+                  Запустить
                 </button>
               </div>
             </form>

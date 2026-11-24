@@ -7,6 +7,7 @@ export interface Participant {
   role: ParticipantRole;
   isAudioMuted: boolean;
   isSpeaking: boolean;
+  isStreamingScreen?: boolean;
   connectedAt: number;
 }
 
@@ -18,7 +19,7 @@ export interface PlaybackState {
   isPlaying: boolean;
   currentTime: number;
   playbackRate: number;
-  lastUpdated: number; // timestamp
+  lastUpdated: number;
   sentBy: string;
 }
 
@@ -26,7 +27,7 @@ export interface ChatAttachment {
   name: string;
   size: number;
   type: string;
-  dataUrl: string; // base64 data url for images/files
+  dataUrl: string;
 }
 
 export interface ChatMessage {
@@ -48,6 +49,7 @@ export type SignalingMessageType =
   | 'join_request'
   | 'room_state'
   | 'request_screen_stream'
+  | 'stream_started'
   | 'stream_stopped'
   | 'playback_sync'
   | 'chat_message'

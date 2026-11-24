@@ -2,432 +2,200 @@
 
 @layer base {
   :root {
-    --ios-bg: #060608;
-    --ios-surface: rgba(24, 24, 28, 0.74);
-    --ios-surface-elevated: rgba(30, 30, 35, 0.88);
-    --ios-surface-thin: rgba(38, 38, 44, 0.52);
-    --ios-border: rgba(255, 255, 255, 0.1);
-    --ios-border-strong: rgba(255, 255, 255, 0.16);
-    --ios-specular: inset 0 1px 0 rgba(255, 255, 255, 0.16);
-    --ios-blue: #0A84FF;
-    --ios-indigo: #5E5CE6;
-    --ios-purple: #BF5AF2;
-    --ios-green: #30D158;
-    --ios-red: #FF453A;
-    --ios-amber: #FFD60A;
-    --ios-label: #F5F5F7;
-    --ios-label-secondary: rgba(245, 245, 247, 0.56);
-    --ios-label-tertiary: rgba(245, 245, 247, 0.36);
-
-    /* iOS 17 ProMotion 120Hz Spring Curves */
-    --spring-fluid: cubic-bezier(0.16, 1, 0.3, 1);
-    --spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --spring-decel: cubic-bezier(0.22, 1, 0.36, 1);
+    --bg-canvas: #09090B;
+    --bg-panel: #111114;
+    --bg-elevated: #18181C;
+    --bg-subtle: #1F1F25;
+    --border-hairline: rgba(255, 255, 255, 0.075);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --text-primary: #FAFAFA;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --accent-live: #F43F5E;
+    --accent-ok: #10B981;
+    --accent-amber: #F59E0B;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  html, body {
-    background-color: var(--ios-bg);
-    color: var(--ios-label);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  html,
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
-    position: relative;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Apple Display Typography */
-.sf-display {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-  letter-spacing: -0.028em;
+.font-display {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", sans-serif;
+  letter-spacing: -0.025em;
 }
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Apple Dark Titanium / Cinema Slate Backdrop */
-.ios-wallpaper {
+/* Subtle Architectural Studio Backdrop */
+.studio-backdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
-  overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(ellipse 90% 65% at 50% -10%, #171923 0%, #0a0b10 45%, #060608 100%);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -15%, rgba(255, 255, 255, 0.045), transparent 70%),
+    linear-gradient(180deg, #0C0C0F 0%, #09090B 100%);
 }
 
-.ios-wallpaper::before,
-.ios-wallpaper::after {
-  content: "";
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(130px);
-  opacity: 0.28;
-  will-change: transform;
+/* Studio Surfaces */
+.studio-panel {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.ios-wallpaper::before {
-  width: 58vw;
-  height: 58vw;
-  max-width: 760px;
-  max-height: 760px;
-  top: -22%;
-  left: -8%;
-  background: radial-gradient(circle, rgba(98, 120, 165, 0.38), rgba(56, 66, 92, 0.16) 60%, transparent 75%);
-  animation: iosAmbientDrift 24s var(--spring-decel) infinite alternate;
+.studio-hud {
+  background: rgba(14, 14, 18, 0.84);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.ios-wallpaper::after {
-  width: 52vw;
-  height: 52vw;
-  max-width: 680px;
-  max-height: 680px;
-  bottom: -18%;
-  right: -8%;
-  background: radial-gradient(circle, rgba(10, 132, 255, 0.22), rgba(48, 56, 82, 0.14) 60%, transparent 75%);
-  animation: iosAmbientDrift 30s var(--spring-decel) infinite alternate-reverse;
-}
-
-@keyframes iosAmbientDrift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(3%, 5%, 0) scale(1.06);
-  }
-}
-
-/* Apple Dark Titanium System Materials */
-.ios-material {
-  background: var(--ios-surface);
-  backdrop-filter: blur(40px) saturate(185%);
-  -webkit-backdrop-filter: blur(40px) saturate(185%);
-  border: 1px solid var(--ios-border);
-  box-shadow: var(--ios-specular), 0 24px 56px rgba(0, 0, 0, 0.56);
-}
-
-.ios-material-thin {
-  background: var(--ios-surface-thin);
-  backdrop-filter: blur(28px) saturate(175%);
-  -webkit-backdrop-filter: blur(28px) saturate(175%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: var(--ios-specular), 0 10px 28px rgba(0, 0, 0, 0.36);
-}
-
-.ios-material-elevated {
-  background: var(--ios-surface-elevated);
-  backdrop-filter: blur(50px) saturate(200%);
-  -webkit-backdrop-filter: blur(50px) saturate(200%);
-  border: 1px solid var(--ios-border-strong);
-  box-shadow: var(--ios-specular), 0 32px 80px rgba(0, 0, 0, 0.72);
-}
-
-/* 3D Spatial Scene & Interactive Cursor Specular */
-.stage-perspective {
-  perspective: 1400px;
-  transform-style: preserve-3d;
-}
-
-.card-3d-interactive {
-  position: relative;
-  transform-style: preserve-3d;
-  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 280ms var(--spring-fluid), box-shadow 300ms var(--spring-fluid);
-  will-change: transform;
-}
-
-.card-3d-interactive::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(
-    520px circle at var(--gx, 50%) var(--gy, 0%),
-    rgba(255, 255, 255, 0.08),
-    transparent 60%
-  );
-  z-index: 1;
-}
-
-.card-3d-interactive > * {
-  position: relative;
-  z-index: 2;
-}
-
-.card-3d-sheen {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.card-3d-sheen::after {
-  content: "";
-  position: absolute;
-  top: -40%;
-  left: -75%;
-  width: 55%;
-  height: 180%;
-  background: linear-gradient(
-    105deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.09) 50%,
-    transparent 80%
-  );
-  transform: skewX(-18deg);
-  animation: glassSheenSweep 1.35s var(--spring-fluid) 120ms both;
-}
-
-/* Tactile iOS 17 Press Physics */
-.ios-press {
-  transition: transform 200ms var(--spring-fluid), background-color 180ms ease, opacity 180ms ease, box-shadow 200ms var(--spring-fluid);
-  will-change: transform;
+/* Tactile Button Response */
+.tactile {
+  transition:
+    transform 160ms var(--ease-spring),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
 }
 
-.ios-press:active:not(:disabled) {
-  transform: scale(0.96);
+.tactile:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
-/* Hardware-Accelerated 3D Spatial Entrance Keyframes */
-@keyframes spatialEnter3D {
-  0% {
-    opacity: 0;
-    transform: perspective(1400px) rotateX(16deg) rotateY(-4deg) translateZ(-120px) translateY(28px) scale(0.94);
-  }
-  100% {
-    opacity: 1;
-    transform: perspective(1400px) rotateX(0deg) rotateY(0deg) translateZ(0px) translateY(0px) scale(1);
-  }
-}
-
-@keyframes glassSheenSweep {
-  0% {
-    opacity: 0;
-    transform: translateX(0%) skewX(-18deg);
-  }
-  25% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(360%) skewX(-18deg);
-  }
-}
-
-@keyframes theaterUnfold3D {
-  0% {
-    opacity: 0;
-    transform: perspective(1600px) rotateX(12deg) translateZ(-80px) translateY(20px) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: perspective(1600px) rotateX(0deg) translateZ(0px) translateY(0px) scale(1);
-  }
-}
-
-@keyframes dockFlip3D {
-  0% {
-    opacity: 0;
-    transform: perspective(1000px) rotateX(-22deg) translateY(24px);
-  }
-  100% {
-    opacity: 1;
-    transform: perspective(1000px) rotateX(0deg) translateY(0px);
-  }
-}
-
-@keyframes sidebarSwing3D {
-  0% {
-    opacity: 0;
-    transform: perspective(1200px) rotateY(-14deg) translateX(24px);
-  }
-  100% {
-    opacity: 1;
-    transform: perspective(1200px) rotateY(0deg) translateX(0px);
-  }
-}
-
-@keyframes iosSpringIn {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 18px, 0) scale(0.97);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes iosPopIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.88);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes iosSheetUp {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 48px, 0) scale(0.96);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes iosToastDrop {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, -24px, 0) scale(0.86);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes iosMessageIn {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 10px, 0) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes iosSpeakingPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.55);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(48, 209, 88, 0);
-  }
-}
-
-.animate-spatial-3d {
-  animation: spatialEnter3D 720ms var(--spring-fluid) both;
-}
-
-.animate-theater-3d {
-  animation: theaterUnfold3D 680ms var(--spring-fluid) both;
-}
-
-.animate-dock-3d {
-  animation: dockFlip3D 640ms var(--spring-fluid) 80ms both;
-}
-
-.animate-sidebar-3d {
-  animation: sidebarSwing3D 680ms var(--spring-fluid) 60ms both;
-}
-
-.animate-ios-spring {
-  animation: iosSpringIn 480ms var(--spring-fluid) both;
-}
-
-.animate-ios-pop {
-  animation: iosPopIn 360ms var(--spring-bouncy) both;
-}
-
-.animate-ios-sheet {
-  animation: iosSheetUp 420ms var(--spring-fluid) both;
-}
-
-.animate-ios-toast {
-  animation: iosToastDrop 420ms var(--spring-bouncy) both;
-}
-
-.animate-ios-msg {
-  animation: iosMessageIn 280ms var(--spring-fluid) both;
-}
-
-.speaking-ring {
-  box-shadow: 0 0 0 2px var(--ios-green);
-  animation: iosSpeakingPulse 1.5s ease-in-out infinite;
-}
-
-/* iMessage Bubbles */
-.imessage-mine {
-  background: linear-gradient(180deg, #0A84FF 0%, #0070E0 100%);
-  color: #F5F5F7;
-  border-radius: 18px 18px 5px 18px;
-  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.25);
-}
-
-.imessage-their {
-  background: rgba(54, 54, 60, 0.78);
-  color: #F5F5F7;
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px 18px 18px 5px;
-}
-
-/* Apple Inset Input */
-.ios-input {
-  background: rgba(118, 118, 128, 0.2);
+/* Inputs */
+.studio-input {
+  background-color: #16161A;
   border: 1px solid rgba(255, 255, 255, 0.09);
-  color: #F5F5F7;
-  border-radius: 14px;
+  color: var(--text-primary);
   outline: none;
-  transition: border-color 200ms var(--spring-fluid), background-color 200ms ease, box-shadow 200ms var(--spring-fluid);
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
 }
 
-.ios-input::placeholder {
-  color: var(--ios-label-tertiary);
+.studio-input::placeholder {
+  color: #52525B;
 }
 
-.ios-input:focus {
-  background: rgba(118, 118, 128, 0.28);
-  border-color: rgba(10, 132, 255, 0.75);
-  box-shadow: 0 0 0 3.5px rgba(10, 132, 255, 0.22);
+.studio-input:focus {
+  background-color: #1B1B20;
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
 }
 
-/* iOS Slider */
-.ios-slider {
+/* Cinema Scrubber / Volume Range */
+.cinema-range {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.22);
   outline: none;
   cursor: pointer;
-  transition: height 160ms var(--spring-fluid);
+  transition: height 140ms ease, background-color 140ms ease;
 }
 
-.ios-slider:hover {
+.cinema-range:hover {
   height: 6px;
+  background: rgba(255, 255, 255, 0.32);
 }
 
-.ios-slider::-webkit-slider-thumb {
+.cinema-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   border-radius: 9999px;
-  background: #F5F5F7;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
-  transition: transform 160ms var(--spring-bouncy);
+  background: #FAFAFA;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  transition: transform 140ms var(--ease-spring);
 }
 
-.ios-slider:hover::-webkit-slider-thumb {
-  transform: scale(1.2);
+.cinema-range:hover::-webkit-slider-thumb {
+  transform: scale(1.18);
 }
 
-/* Apple Thin Scrollbars */
+/* Animations */
+@keyframes panelEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes msgAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes voicePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+}
+
+.animate-panel-in {
+  animation: panelEnter 380ms var(--ease-out-expo) both;
+}
+
+.animate-toast-in {
+  animation: toastSlideDown 300ms var(--ease-out-expo) both;
+}
+
+.animate-msg-in {
+  animation: msgAppear 200ms var(--ease-spring) both;
+}
+
+.speaking-halo {
+  box-shadow: 0 0 0 2px var(--accent-ok);
+  animation: voicePulse 1.4s ease-in-out infinite;
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -438,40 +206,42 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.14);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.28);
 }
 
-/* Accessible Skip Link */
+/* Skip Link */
 .skip-link {
   position: absolute;
   top: -999px;
   left: 1rem;
-  z-index: 100;
-  padding: 0.75rem 1.25rem;
-  background: var(--ios-blue);
-  color: #F5F5F7;
-  border-radius: 14px;
+  z-index: 200;
+  padding: 0.65rem 1rem;
+  background: #FAFAFA;
+  color: #09090B;
+  border-radius: 10px;
   font-weight: 600;
+  font-size: 13px;
   text-decoration: none;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
 }
 
 .skip-link:focus {
-  top: 1rem;
+  top: 0.75rem;
 }
 
 :focus-visible {
-  outline: 2px solid var(--ios-blue);
+  outline: 2px solid rgba(255, 255, 255, 0.45);
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
